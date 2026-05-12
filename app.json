@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "Planora",
+    "slug": "Planora",
+    "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/9676a7e5-b55e-463c-bbc5-d2149f32eb70"
+    },
+    "orientation": "portrait",
+    "icon": "./src/assets/logo.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./src/assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFBDE"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/logo.png",
+        "backgroundColor": "#FFFBDE"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.Planora",
+      "permissions": [
+        "NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "notification": {
+      "icon": "./src/assets/logo.png",
+      "color": "#129990"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      "expo-sqlite",
+      [
+        "expo-notifications",
+        {
+          "icon": "./src/assets/logo.png",
+          "color": "#129990"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9676a7e5-b55e-463c-bbc5-d2149f32eb70"
+      }
+    }
+  }
+}
