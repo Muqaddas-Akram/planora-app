@@ -196,7 +196,21 @@ export const setupNotificationListeners = async () => {
   } catch (_) {}
 
   _receivedListener = Notifications.addNotificationReceivedListener((notification) => {
-    const { title, body } = notification.request.content || {};
+    const { title, body, data } = notification.request.content || {};
+
+    // Save incoming notification to database immediately
+    (async () => {
+      try {
+        const { saveIncomingNotification } = await import('../database/localDb');
+        await saveIncomingNotification({
+          title: title || 'Notification',
+          message: body || '',
+          tripId: data?.tripId || null,
+        });
+      } catch (error) {
+        console.warn('Could not save incoming notification:', error);
+      }
+    })();
 
     if (typeof _onNotificationCallback === 'function') {
       try {

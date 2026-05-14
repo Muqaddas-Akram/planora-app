@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
 import { COLORS, FONTS } from '../utils/theme';
+import { responsiveFont, responsiveSize } from '../utils/responsive';
 
 const { width } = Dimensions.get('window');
 
@@ -29,26 +30,26 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: 'center',
-    marginTop: -120, 
+    marginTop: -responsiveSize(120), 
   },
   logo: {
     width: width * 0.65,
     height: width * 0.65,
-    marginBottom: -90, 
+    marginBottom: -responsiveSize(90), 
   },
   appName: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 36, 
+    fontSize: responsiveFont(36), 
     color: COLORS.primary,
     letterSpacing: 2,
   },
   tagline: {
     fontFamily: 'Poppins-Regular',
-    fontSize: 14,
+    fontSize: responsiveFont(14),
     color: COLORS.darkAccent,
     opacity: 0.8,
     textAlign: 'center',
-    paddingHorizontal: 40,
+    paddingHorizontal: responsiveSize(40),
   },
 });
 

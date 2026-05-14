@@ -1,36 +1,102 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   ActivityIndicator,
   FlatList,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { DEMO_USER_ID } from '../../utils/constants';
-import { COLORS, SHADOWS, SPACING, FONTS } from '../../utils/theme';
+import { COLORS, SHADOWS, SPACING } from '../../utils/theme';
 import { responsiveFont, responsiveSize } from '../../utils/responsive';
-import { deleteChecklistItem, getChecklistItems, getTrips, saveChecklistItem, updateChecklistItem } from '../../database/localDb';
+
+import {
+  deleteChecklistItem,
+  getChecklistItems,
+  getTrips,
+  saveChecklistItem,
+  updateChecklistItem,
+} from '../../database/localDb';
+
+import { classifyTripsByDate } from '../../utils/tripDates';
 
 const TEMPLATES = {
-  'Beach': ['Sunscreen', 'Swimwear', 'Sunglasses', 'Beach Towel', 'Flip Flops'],
-  'Winter': ['Jacket', 'Gloves', 'Scarf', 'Boots', 'Thermal Wear'],
-  'Umrah': ['Ihram / Abaya', 'Prayer Mat', 'Prayer Beads', 'Comfortable Shoes', 'Pocket Quran'],
-  'Solo': ['Power Bank', 'First Aid Kit', 'Offline Maps', 'Copy of Documents'],
+  Beach: [
+    'Sunscreen',
+    'Swimwear',
+    'Sunglasses',
+    'Beach Towel',
+    'Flip Flops',
+  ],
+
+  Winter: [
+    'Jacket',
+    'Gloves',
+    'Scarf',
+    'Boots',
+    'Thermal Wear',
+  ],
+
+  Summer: [
+    'Light Clothes',
+    'Cap / Hat',
+    'Water Bottle',
+    'Sunscreen',
+    'Slippers',
+  ],
+
+  'Umrah / Hajj': [
+    'Ihram / Abaya',
+    'Prayer Mat',
+    'Pocket Quran',
+    'Tasbeeh',
+    'Comfortable Sandals',
+    'Unscented Soap',
+    'Travel Bottle',
+    'Passport',
+    'Visa Documents',
+    'Water Bottle',
+  ],
+
+  Solo: [
+    'Power Bank',
+    'First Aid Kit',
+    'Offline Maps',
+    'Copy of Documents',
+  ],
+
+  Essentials: [
+    'Passport / ID Card',
+    'Phone Charger',
+    'Wallet',
+    'Medicines',
+    'Toothbrush',
+    'Toothpaste',
+    'Power Bank',
+    'Extra Clothes',
+    'Tickets',
+    'Cash / Cards',
+  ],
 };
 
-const ChecklistScreen = () => {
+const ChecklistScreen = ({ route }) => {
   const [trips, setTrips] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newItem, setNewItem] = useState('');
+
+  const targetTripId = route?.params?.tripId;
 
   const loadTrips = useCallback(async (showSpinner = false) => {
     if (showSpinner) {
@@ -39,20 +105,42 @@ const ChecklistScreen = () => {
 
     try {
       const tripsList = await getTrips(DEMO_USER_ID);
-      setTrips(tripsList);
+
+      const { active, upcoming } = classifyTripsByDate(tripsList);
+
+      const availableTrips = [...active, ...upcoming];
+
+      setTrips(availableTrips);
+
       setSelectedTrip(currentSelected => {
-        if (currentSelected) {
-          return tripsList.find(trip => trip.id === currentSelected.id) || tripsList[0] || null;
+        if (targetTripId) {
+          const matchedTrip = availableTrips.find(
+            trip => trip.id === targetTripId
+          );
+
+          if (matchedTrip) {
+            return matchedTrip;
+          }
         }
 
-        return tripsList[0] || null;
+        if (currentSelected) {
+          return (
+            availableTrips.find(
+              trip => trip.id === currentSelected.id
+            ) ||
+            availableTrips[0] ||
+            null
+          );
+        }
+
+        return availableTrips[0] || null;
       });
     } catch (error) {
       console.error('Error fetching trips:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [targetTripId]);
 
   const loadChecklistItems = useCallback(async (tripId) => {
     if (!tripId) {
@@ -75,19 +163,34 @@ const ChecklistScreen = () => {
   );
 
   useEffect(() => {
+    if (!targetTripId || trips.length === 0) return;
+
+    const matchedTrip = trips.find(
+      trip => trip.id === targetTripId
+    );
+
+    if (matchedTrip && matchedTrip.id !== selectedTrip?.id) {
+      setSelectedTrip(matchedTrip);
+    }
+  }, [targetTripId, trips, selectedTrip?.id]);
+
+  useEffect(() => {
     loadChecklistItems(selectedTrip?.id);
   }, [selectedTrip, loadChecklistItems]);
 
   const addItem = async (itemName) => {
-    if (!itemName || !selectedTrip) return;
+    if (!itemName.trim() || !selectedTrip) return;
+
     try {
       await saveChecklistItem({
         tripId: selectedTrip.id,
-        item: itemName,
+        item: itemName.trim(),
         completed: false,
         createdAt: new Date().toISOString(),
       });
+
       setNewItem('');
+
       await loadChecklistItems(selectedTrip.id);
     } catch (error) {
       console.error(error);
@@ -99,6 +202,7 @@ const ChecklistScreen = () => {
       await updateChecklistItem(itemId, {
         completed: !currentStatus,
       });
+
       await loadChecklistItems(selectedTrip?.id);
     } catch (error) {
       console.error(error);
@@ -108,6 +212,7 @@ const ChecklistScreen = () => {
   const deleteItem = async (itemId) => {
     try {
       await deleteChecklistItem(itemId);
+
       await loadChecklistItems(selectedTrip?.id);
     } catch (error) {
       console.error(error);
@@ -115,125 +220,270 @@ const ChecklistScreen = () => {
   };
 
   const applyTemplate = async (templateName) => {
-    const templateItems = TEMPLATES[templateName];
-    await Promise.all(templateItems.map(item => saveChecklistItem({
-      tripId: selectedTrip.id,
-      item,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    })));
-    await loadChecklistItems(selectedTrip.id);
-    Alert.alert('Success', `${templateName} template applied!`);
+    if (!selectedTrip) return;
+
+    try {
+      const templateItems = TEMPLATES[templateName];
+
+      await Promise.all(
+        templateItems.map(item =>
+          saveChecklistItem({
+            tripId: selectedTrip.id,
+            item,
+            completed: false,
+            createdAt: new Date().toISOString(),
+          })
+        )
+      );
+
+      await loadChecklistItems(selectedTrip.id);
+
+      Alert.alert(
+        'Template Added',
+        `${templateName} checklist added successfully`
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const confirmApplyTemplate = (templateName) => {
+    Alert.alert(
+      'Apply Template',
+      `${templateName} template apply karni hai? Is se checklist me new items add honge.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Apply',
+          onPress: () => applyTemplate(templateName),
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const completedCount = items.filter(i => i.completed).length;
-  const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
+
+  const progress =
+    items.length > 0
+      ? (completedCount / items.length) * 100
+      : 0;
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator
+          size="large"
+          color={COLORS.primary}
+        />
       </View>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Packing List</Text>
-      </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>Packing List</Text>
+        </View>
 
-      {trips.length > 0 ? (
-        <View style={{ flex: 1 }}>
-          <View style={{ paddingHorizontal: SPACING.l }}>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              style={styles.tripSelector}
-              contentContainerStyle={styles.tripSelectorContent}
-            >
-              {trips.map(trip => (
-                <TouchableOpacity 
-                  key={trip.id} 
-                  style={[styles.tripTab, selectedTrip?.id === trip.id && styles.activeTripTab]}
-                  onPress={() => setSelectedTrip(trip)}
-                >
-                  <Text style={[styles.tripTabText, selectedTrip?.id === trip.id && styles.activeTripTabText]}>
-                    {trip.tripName}
+        {trips.length > 0 ? (
+          <View style={{ flex: 1 }}>
+            <View style={styles.topSection}>
+              {/* Trips */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tripSelectorContent}
+              >
+                {trips.map(trip => (
+                  <TouchableOpacity
+                    key={trip.id}
+                    style={[
+                      styles.tripTab,
+                      selectedTrip?.id === trip.id &&
+                        styles.activeTripTab,
+                    ]}
+                    onPress={() => setSelectedTrip(trip)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.tripTabText,
+                        selectedTrip?.id === trip.id &&
+                          styles.activeTripTabText,
+                      ]}
+                    >
+                      {trip.tripName}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Progress */}
+              <View style={styles.progressCard}>
+                <View style={styles.progressInfo}>
+                  <Text style={styles.progressText}>
+                    {completedCount} of {items.length} packed
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
 
-            <View style={styles.progressCard}>
-              <View style={styles.progressInfo}>
-                <Text style={styles.progressText}>{completedCount} of {items.length} items packed</Text>
-                <Text style={styles.percentage}>{progress.toFixed(0)}%</Text>
-              </View>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${progress}%` }]} />
-              </View>
-            </View>
+                  <Text style={styles.percentage}>
+                    {progress.toFixed(0)}%
+                  </Text>
+                </View>
 
-            <Text style={styles.sectionTitle}>Templates</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.templateScroll}>
-              {Object.keys(TEMPLATES).map((template) => (
-                <TouchableOpacity 
-                  key={template} 
-                  style={styles.templateCard}
-                  onPress={() => applyTemplate(template)}
-                >
-                  <Text style={styles.templateText}>{template}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            <View style={styles.addInputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Add new item..."
-                value={newItem}
-                onChangeText={setNewItem}
-                onSubmitEditing={() => addItem(newItem)}
-              />
-              <TouchableOpacity style={styles.addBtn} onPress={() => addItem(newItem)}>
-                <Ionicons name="add" size={24} color={COLORS.white} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <FlatList
-            data={items}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={({ item }) => (
-              <View style={styles.checkItem}>
-                <TouchableOpacity 
-                  style={styles.checkRow} 
-                  onPress={() => toggleItem(item.id, item.completed)}
-                >
-                  <Ionicons 
-                    name={item.completed ? "checkbox" : "square-outline"} 
-                    size={24} 
-                    color={item.completed ? COLORS.primary : COLORS.gray} 
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${progress}%`,
+                      },
+                    ]}
                   />
-                  <Text style={[styles.itemText, item.completed && styles.itemTextCompleted]}>
-                    {item.item}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteItem(item.id)}>
-                  <Ionicons name="trash-outline" size={20} color={COLORS.error} />
+                </View>
+              </View>
+
+              {/* Templates */}
+              <Text style={styles.sectionTitle}>
+                Quick Templates
+              </Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.templateContainer}
+              >
+                {Object.keys(TEMPLATES).map(template => (
+                  <TouchableOpacity
+                    key={template}
+                    style={styles.templateCard}
+                    activeOpacity={0.8}
+                    onPress={() => confirmApplyTemplate(template)}
+                  >
+                    <Text style={styles.templateText}>
+                      {template}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Add Item */}
+              <View style={styles.addInputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Add new item..."
+                  placeholderTextColor={COLORS.gray}
+                  value={newItem}
+                  onChangeText={setNewItem}
+                  onSubmitEditing={() => addItem(newItem)}
+                  returnKeyType="done"
+                />
+
+                <TouchableOpacity
+                  style={styles.addBtn}
+                  onPress={() => addItem(newItem)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="add"
+                    size={responsiveSize(24)}
+                    color={COLORS.white}
+                  />
                 </TouchableOpacity>
               </View>
-            )}
-          />
-        </View>
-      ) : (
-        <View style={styles.centerContainer}>
-          <Ionicons name="briefcase-outline" size={64} color={COLORS.gray} />
-          <Text style={styles.emptyText}>Create a trip first to manage checklist!</Text>
-        </View>
-      )}
+            </View>
+
+            {/* Checklist */}
+            <FlatList
+              data={items}
+              keyExtractor={item => item.id.toString()}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContent}
+              ListEmptyComponent={
+                <View style={styles.emptyItemsContainer}>
+                  <Ionicons
+                    name="clipboard-outline"
+                    size={responsiveSize(60)}
+                    color={COLORS.gray}
+                  />
+
+                  <Text style={styles.emptyItemsText}>
+                    No items added yet
+                  </Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <View style={styles.checkItem}>
+                  <TouchableOpacity
+                    style={styles.checkRow}
+                    activeOpacity={0.8}
+                    onPress={() =>
+                      toggleItem(
+                        item.id,
+                        item.completed
+                      )
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        item.completed
+                          ? 'checkbox'
+                          : 'square-outline'
+                      }
+                      size={responsiveSize(24)}
+                      color={
+                        item.completed
+                          ? COLORS.primary
+                          : COLORS.gray
+                      }
+                    />
+
+                    <Text
+                      style={[
+                        styles.itemText,
+                        item.completed &&
+                          styles.itemTextCompleted,
+                      ]}
+                    >
+                      {item.item}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => deleteItem(item.id)}
+                  >
+                    <Ionicons
+                      name="trash-outline"
+                      size={responsiveSize(20)}
+                      color={COLORS.error}
+                    />
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          </View>
+        ) : (
+          <View style={styles.centerContainer}>
+            <Ionicons
+              name="briefcase-outline"
+              size={responsiveSize(70)}
+              color={COLORS.gray}
+            />
+
+            <Text style={styles.emptyText}>
+              Create a trip first to manage checklist!
+            </Text>
+          </View>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -243,161 +493,210 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: responsiveSize(20),
   },
+
   header: {
-    padding: SPACING.l,
+    paddingHorizontal: SPACING.l,
+    paddingTop: responsiveSize(12),
+    paddingBottom: responsiveSize(10),
   },
+
   title: {
     fontFamily: 'Poppins-Bold',
     fontSize: responsiveFont(24),
     color: COLORS.primary,
   },
-  tripSelector: {
-    marginBottom: SPACING.l,
-    marginVertical: responsiveSize(10),
+
+  topSection: {
+    paddingHorizontal: SPACING.l,
   },
+
   tripSelectorContent: {
-    paddingLeft: 4,
-    paddingRight: SPACING.l,
-    paddingVertical: 4,
+    paddingVertical: responsiveSize(4),
+    paddingRight: responsiveSize(10),
   },
+
   tripTab: {
-    paddingHorizontal: responsiveSize(20),
+    paddingHorizontal: responsiveSize(18),
     paddingVertical: responsiveSize(10),
-    borderRadius: 25,
+    borderRadius: responsiveSize(24),
     backgroundColor: COLORS.white,
-    marginRight: 12,
+    marginRight: responsiveSize(10),
     ...SHADOWS.soft,
   },
+
   activeTripTab: {
     backgroundColor: COLORS.primary,
   },
+
   tripTabText: {
     fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(12),
     color: COLORS.gray,
   },
+
   activeTripTabText: {
     color: COLORS.white,
   },
+
   progressCard: {
     backgroundColor: COLORS.white,
-    padding: SPACING.m,
-    borderRadius: 20,
+    padding: responsiveSize(16),
+    borderRadius: responsiveSize(20),
+    marginTop: responsiveSize(18),
+    marginBottom: responsiveSize(18),
     ...SHADOWS.soft,
-    marginBottom: SPACING.l,
   },
+
   progressInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: responsiveSize(10),
   },
+
   progressText: {
     fontFamily: 'Poppins-Medium',
-    fontSize: responsiveFont(14),
+    fontSize: responsiveFont(13),
     color: COLORS.darkAccent,
   },
+
   percentage: {
-    fontFamily: 'Urbanist-Bold',
+    fontFamily: 'Poppins-Bold',
     fontSize: responsiveFont(18),
     color: COLORS.primary,
   },
+
   progressBar: {
     height: responsiveSize(10),
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(5),
+    borderRadius: responsiveSize(10),
     overflow: 'hidden',
   },
+
   progressFill: {
     height: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: 5,
+    borderRadius: responsiveSize(10),
   },
+
   sectionTitle: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: responsiveFont(16),
     color: COLORS.black,
-    marginBottom: SPACING.s,
+    marginBottom: responsiveSize(12),
   },
-  templateScroll: {
-    marginBottom: SPACING.l,
+
+  templateContainer: {
+    paddingBottom: responsiveSize(6),
   },
+
   templateCard: {
     backgroundColor: COLORS.secondary,
     paddingHorizontal: responsiveSize(16),
     paddingVertical: responsiveSize(10),
-    borderRadius: responsiveSize(12),
-    marginRight: 10,
+    borderRadius: responsiveSize(14),
+    marginRight: responsiveSize(10),
     ...SHADOWS.soft,
   },
+
   templateText: {
     fontFamily: 'Poppins-SemiBold',
-    color: COLORS.white,
     fontSize: responsiveFont(12),
+    color: COLORS.white,
   },
+
   addInputContainer: {
     flexDirection: 'row',
-    marginBottom: SPACING.m,
+    alignItems: 'center',
+    marginTop: responsiveSize(18),
+    marginBottom: responsiveSize(18),
   },
+
   input: {
     flex: 1,
     backgroundColor: COLORS.white,
-    padding: responsiveSize(12),
-    borderRadius: responsiveSize(12),
+    paddingHorizontal: responsiveSize(14),
+    paddingVertical: responsiveSize(14),
+    borderRadius: responsiveSize(14),
     fontFamily: 'Poppins-Regular',
+    fontSize: responsiveFont(13),
+    color: COLORS.black,
+    marginRight: responsiveSize(10),
     ...SHADOWS.soft,
-    marginRight: 8,
   },
+
   addBtn: {
+    width: responsiveSize(52),
+    height: responsiveSize(52),
+    borderRadius: responsiveSize(14),
     backgroundColor: COLORS.primary,
-    width: responsiveSize(48),
-    height: responsiveSize(48),
-    borderRadius: responsiveSize(12),
     justifyContent: 'center',
     alignItems: 'center',
     ...SHADOWS.medium,
   },
+
   listContent: {
     paddingHorizontal: SPACING.l,
-    paddingBottom: 100,
+    paddingBottom: responsiveSize(120),
   },
+
   checkItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(16),
-    marginBottom: 10,
+    borderRadius: responsiveSize(18),
+    marginBottom: responsiveSize(12),
     ...SHADOWS.soft,
-    justifyContent: 'space-between',
   },
+
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    marginRight: responsiveSize(10),
   },
+
   itemText: {
+    flex: 1,
     fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(14),
     color: COLORS.black,
     marginLeft: responsiveSize(12),
   },
+
   itemTextCompleted: {
     textDecorationLine: 'line-through',
     color: COLORS.gray,
   },
+
   emptyText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(14),
     color: COLORS.gray,
-    marginTop: 8,
+    marginTop: responsiveSize(12),
     textAlign: 'center',
+  },
+
+  emptyItemsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: responsiveSize(60),
+  },
+
+  emptyItemsText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: responsiveFont(14),
+    color: COLORS.gray,
+    marginTop: responsiveSize(12),
   },
 });
 

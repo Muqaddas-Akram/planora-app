@@ -16,6 +16,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { DEMO_USER_ID } from '../../utils/constants';
 import { getChecklistItems, getExpenses, getTrips, getUnreadNotificationsCount } from '../../database/localDb';
 import { responsiveFont, responsiveSize } from '../../utils/responsive';
+import { classifyTripsByDate } from '../../utils/tripDates';
+import { generateSmartNotifications } from '../../services/smartNotificationService';
 
 const HomeScreen = ({ navigation }) => {
   const { width } = useWindowDimensions();
@@ -34,37 +36,16 @@ const HomeScreen = ({ navigation }) => {
     setUnreadCount(count);
   }, []);
 
-  // Helper function to categorize trips
-  const categorizeTripsByDate = useCallback((trips) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const active = [];
-    const upcoming = [];
-
-    trips.forEach(trip => {
-      const tripStartDate = new Date(trip.startDate);
-      tripStartDate.setHours(0, 0, 0, 0);
-
-      if (tripStartDate <= today) {
-        active.push(trip);
-      } else {
-        upcoming.push(trip);
-      }
-    });
-
-    return { active, upcoming };
-  }, []);
-
   const loadDashboard = useCallback(async (showRefresh = false) => {
     if (showRefresh) setRefreshing(true);
 
     try {
+      await generateSmartNotifications();
       const tripsList = await getTrips(DEMO_USER_ID);
       setAllTrips(tripsList);
 
       // Categorize trips into active and upcoming
-      const { active, upcoming } = categorizeTripsByDate(tripsList);
+      const { active, upcoming } = classifyTripsByDate(tripsList);
       setActiveTrips(active);
       setUpcomingTrips(upcoming);
 
@@ -82,7 +63,7 @@ const HomeScreen = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [categorizeTripsByDate]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,6 +71,16 @@ const HomeScreen = ({ navigation }) => {
       loadUnreadCount();
     }, [loadDashboard, loadUnreadCount])
   );
+
+  useEffect(() => {
+    loadUnreadCount();
+
+    const interval = setInterval(() => {
+      loadUnreadCount();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [loadUnreadCount]);
 
   useEffect(() => {
     const loadAllPackingProgress = async () => {
@@ -100,7 +91,7 @@ const HomeScreen = ({ navigation }) => {
       }
 
       const progressMap = {};
-      
+
       try {
         await Promise.all(activeTrips.map(async (trip) => {
           const packingItems = await getChecklistItems(trip.id);
@@ -260,7 +251,7 @@ const HomeScreen = ({ navigation }) => {
                       
                       <TouchableOpacity 
                         style={styles.tripStatCard}
-                        onPress={() => navigation.navigate('Budget')}
+                        onPress={() => navigation.navigate('Budget', { tripId: trip.id })}
                       >
                         <View style={styles.statCardHeader}>
                           <Text style={styles.statCardTitle}>Balance</Text>
@@ -289,7 +280,7 @@ const HomeScreen = ({ navigation }) => {
 
                       <TouchableOpacity 
                         style={[styles.tripStatCard, { marginTop: SPACING.s }]}
-                        onPress={() => navigation.navigate('Checklist')}
+                        onPress={() => navigation.navigate('Checklist', { tripId: trip.id })}
                       >
                         <View style={styles.statCardHeader}>
                           <Text style={styles.statCardTitle}>Packing</Text>
@@ -420,9 +411,9 @@ const styles = StyleSheet.create({
     color: COLORS.darkAccent,
   },
   notificationBtn: {
-    padding: 8,
+    padding: responsiveSize(8),
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: responsiveSize(12),
     ...SHADOWS.soft,
     position: 'relative',
   },
@@ -440,7 +431,7 @@ const styles = StyleSheet.create({
   chartCard: {
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: 24,
+    borderRadius: responsiveSize(24),
     marginBottom: SPACING.xl,
     ...SHADOWS.soft,
   },
@@ -471,12 +462,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   budgetBarContainer: {
-    marginBottom: 20,
+    marginBottom: responsiveSize(20),
   },
   budgetBarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: responsiveSize(6),
   },
   budgetBarName: {
     fontFamily: 'Poppins-Medium',
@@ -489,29 +480,29 @@ const styles = StyleSheet.create({
     fontSize: responsiveFont(12),
   },
   barBackground: {
-    height: 12,
+    height: responsiveSize(12),
     backgroundColor: COLORS.lightGray,
-    borderRadius: 6,
+    borderRadius: responsiveSize(6),
     overflow: 'hidden',
     position: 'relative',
   },
   barFill: {
     height: '100%',
-    borderRadius: 6,
+    borderRadius: responsiveSize(6),
   },
   overBudgetIndicator: {
     position: 'absolute',
     right: 0,
     top: 0,
     bottom: 0,
-    width: 10,
+    width: responsiveSize(10),
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
   warningText: {
     fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(10),
     color: '#FF5252',
-    marginTop: 4,
+    marginTop: responsiveSize(4),
     textAlign: 'right',
   },
   legendContainer: {
@@ -526,9 +517,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: responsiveSize(10),
+    height: responsiveSize(10),
+    borderRadius: responsiveSize(5),
   },
   legendText: {
     fontFamily: 'Poppins-Regular',
@@ -551,8 +542,8 @@ const styles = StyleSheet.create({
   activeTripCard: {
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: 20,
-    minWidth: 280,
+    borderRadius: responsiveSize(20),
+    minWidth: responsiveSize(280),
     ...SHADOWS.soft,
   },
   activeTripName: {
@@ -570,7 +561,7 @@ const styles = StyleSheet.create({
   tripStatCard: {
     backgroundColor: 'rgba(25, 100, 126, 0.05)',
     padding: SPACING.m,
-    borderRadius: 16,
+    borderRadius: responsiveSize(16),
   },
   statCardHeader: {
     flexDirection: 'row',
@@ -590,15 +581,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   smallProgressBar: {
-    height: 6,
+    height: responsiveSize(6),
     backgroundColor: COLORS.lightGray,
-    borderRadius: 3,
+    borderRadius: responsiveSize(3),
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: responsiveSize(6),
   },
   smallProgressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: responsiveSize(3),
   },
   smallProgressLabel: {
     fontFamily: 'Poppins-Regular',
@@ -613,7 +604,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     padding: SPACING.m,
-    borderRadius: 20,
+    borderRadius: responsiveSize(20),
     backgroundColor: COLORS.white,
     ...SHADOWS.soft,
   },
@@ -635,11 +626,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   progressBar: {
-    height: 8,
+    height: responsiveSize(8),
     backgroundColor: COLORS.lightGray,
-    borderRadius: 4,
+    borderRadius: responsiveSize(4),
     overflow: 'hidden',
-    marginBottom: 6,
+    marginBottom: responsiveSize(6),
   },
   progressFill: {
     height: '100%',

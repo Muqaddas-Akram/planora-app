@@ -21,6 +21,7 @@ import { COLORS, SHADOWS, SPACING } from '../../utils/theme';
 import { responsiveFont, responsiveSize } from '../../utils/responsive';
 import { DEMO_USER_ID } from '../../utils/constants';
 import { createReminder, deleteReminder, getReminders, getTrips, updateReminder } from '../../database/localDb';
+import { classifyTripsByDate } from '../../utils/tripDates';
 
 const formatReminderDate = (value) => {
   const dateValue = new Date(value);
@@ -50,9 +51,15 @@ const RemindersScreen = () => {
       ]);
 
       const now = new Date();
-      const upcomingReminders = reminderRows.filter((reminder) => new Date(reminder.reminderDate) > now);
+      const { active, upcoming } = classifyTripsByDate(tripRows);
+      const availableTrips = [...active, ...upcoming];
+      const availableTripIds = new Set(availableTrips.map((trip) => trip.id));
+      const upcomingReminders = reminderRows.filter((reminder) =>
+        new Date(reminder.reminderDate) > now &&
+        (!reminder.tripId || availableTripIds.has(reminder.tripId))
+      );
 
-      setTrips(tripRows);
+      setTrips(availableTrips);
       setReminders(upcomingReminders);
     } catch (error) {
       Alert.alert('Error', 'Could not load reminders.');
@@ -73,6 +80,8 @@ const RemindersScreen = () => {
     setMessage('');
     setReminderDate(new Date(Date.now() + 60 * 60 * 1000));
     setSelectedTripId(null);
+    setShowDatePicker(false);
+    setShowTimePicker(false);
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -116,6 +125,9 @@ const RemindersScreen = () => {
       return;
     }
 
+    Keyboard.dismiss();
+    setShowDatePicker(false);
+    setShowTimePicker(false);
     setSaving(true);
 
     try {
@@ -155,6 +167,8 @@ const RemindersScreen = () => {
     setMessage(reminder.message);
     setReminderDate(new Date(reminder.reminderDate));
     setSelectedTripId(reminder.tripId || null);
+    setShowDatePicker(false);
+    setShowTimePicker(false);
   };
 
   const handleDeleteReminder = async (reminderId) => {
@@ -214,7 +228,7 @@ const RemindersScreen = () => {
                   setShowTimePicker(false);
                 }}
               >
-                <Text style={[styles.tripChipText, !selectedTripId && styles.tripChipTextActive]}>All Trips</Text>
+                <Text style={[styles.tripChipText, !selectedTripId && styles.tripChipTextActive]}>All</Text>
               </TouchableOpacity>
               {trips.map(trip => (
                 <TouchableOpacity
@@ -292,7 +306,7 @@ const RemindersScreen = () => {
               scrollEnabled={false}
               contentContainerStyle={styles.reminderList}
               renderItem={({ item }) => {
-                const tripName = trips.find(trip => trip.id === item.tripId)?.tripName || 'All Trips';
+                const tripName = trips.find(trip => trip.id === item.tripId)?.tripName || 'All';
 
                 return (
                   <TouchableOpacity style={styles.reminderCard} onPress={() => handleEditReminder(item)}>
@@ -499,11 +513,11 @@ const styles = StyleSheet.create({
   deleteEditButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: responsiveSize(12),
     borderWidth: 1,
     borderColor: COLORS.error,
     borderRadius: responsiveSize(14),
-    marginTop: 4,
+    marginTop: responsiveSize(4),
   },
   deleteEditText: {
     fontFamily: 'Poppins-Medium',
@@ -522,10 +536,10 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 48,
+    paddingVertical: responsiveSize(48),
   },
   emptyText: {
-    marginTop: 10,
+    marginTop: responsiveSize(10),
     fontFamily: 'Poppins-Regular',
     color: COLORS.gray,
   },
@@ -552,26 +566,26 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: responsiveFont(12),
     color: COLORS.gray,
-    marginTop: 4,
+    marginTop: responsiveSize(4),
   },
   deleteIconButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: responsiveSize(8),
+    marginLeft: responsiveSize(8),
   },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
+    gap: responsiveSize(8),
+    marginTop: responsiveSize(12),
   },
   metaPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: responsiveSize(6),
     backgroundColor: COLORS.lightGray,
     borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: responsiveSize(10),
+    paddingVertical: responsiveSize(6),
   },
   metaText: {
     fontFamily: 'Poppins-Medium',
@@ -582,7 +596,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
-    paddingBottom: 20,
+    paddingBottom: responsiveSize(20),
     position: 'absolute',
     bottom: 0,
     left: 0,

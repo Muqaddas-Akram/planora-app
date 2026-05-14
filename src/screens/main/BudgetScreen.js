@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Modal, 
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
   TextInput,
   Alert,
   ActivityIndicator,
@@ -13,26 +13,31 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback
-} from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { DEMO_USER_ID } from '../../utils/constants';
-import { COLORS, SHADOWS, SPACING, FONTS } from '../../utils/theme';
-import { responsiveFont, responsiveSize } from '../../utils/responsive';
-import { deleteExpense, getExpenses, getTrips, saveExpense } from '../../database/localDb';
+  TouchableWithoutFeedback,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { DEMO_USER_ID } from "../../utils/constants";
+import { COLORS, SHADOWS, SPACING, FONTS } from "../../utils/theme";
+import { responsiveFont, responsiveSize } from "../../utils/responsive";
+import {
+  deleteExpense,
+  getExpenses,
+  getTrips,
+  saveExpense,
+} from "../../database/localDb";
 
 const CATEGORIES = [
-  { id: 'Flights', icon: 'bookmark' },
-  { id: 'Hotels', icon: 'bookmark' },
-  { id: 'Food', icon: 'bookmark' },
-  { id: 'Shopping', icon: 'bookmark' },
-  { id: 'Transport', icon: 'bookmark' },
-  { id: 'Emergency', icon: 'bookmark' },
+  { id: "Flights", icon: "bookmark" },
+  { id: "Hotels", icon: "bookmark" },
+  { id: "Food", icon: "bookmark" },
+  { id: "Shopping", icon: "bookmark" },
+  { id: "Transport", icon: "bookmark" },
+  { id: "Emergency", icon: "bookmark" },
 ];
 
-const BudgetScreen = () => {
+const BudgetScreen = ({ route }) => {
   const [trips, setTrips] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [expenses, setExpenses] = useState([]);
@@ -40,17 +45,18 @@ const BudgetScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [categories, setCategories] = useState(CATEGORIES);
   const [showAddCategory, setShowAddCategory] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  
+  const [newCategoryName, setNewCategoryName] = useState("");
+
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
   // Form State
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('Food');
-  const [note, setNote] = useState('');
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Food");
+  const [note, setNote] = useState("");
   const [addingExpense, setAddingExpense] = useState(false);
+  const targetTripId = route?.params?.tripId;
 
   const loadTrips = useCallback(async (showSpinner = false) => {
     if (showSpinner) {
@@ -60,19 +66,28 @@ const BudgetScreen = () => {
     try {
       const tripsList = await getTrips(DEMO_USER_ID);
       setTrips(tripsList);
-      setSelectedTrip(currentSelected => {
+      setSelectedTrip((currentSelected) => {
+        if (targetTripId) {
+          const matchedTrip = tripsList.find((trip) => trip.id === targetTripId);
+          if (matchedTrip) return matchedTrip;
+        }
+
         if (currentSelected) {
-          return tripsList.find(trip => trip.id === currentSelected.id) || tripsList[0] || null;
+          return (
+            tripsList.find((trip) => trip.id === currentSelected.id) ||
+            tripsList[0] ||
+            null
+          );
         }
 
         return tripsList[0] || null;
       });
     } catch (error) {
-      console.error('Error fetching trips:', error);
+      console.error("Error fetching trips:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [targetTripId]);
 
   const loadExpenses = useCallback(async (tripId) => {
     if (!tripId) {
@@ -84,15 +99,36 @@ const BudgetScreen = () => {
       const expensesList = await getExpenses(tripId);
       setExpenses(expensesList);
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      console.error("Error fetching expenses:", error);
     }
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadTrips(false);
-    }, [loadTrips])
+
+      return () => {
+        // Reset open overlays when leaving screen so they don't stay open on return.
+        Keyboard.dismiss();
+        setModalVisible(false);
+        setShowAddCategory(false);
+        setNewCategoryName("");
+        setAmount("");
+        setCategory("Food");
+        setNote("");
+        setIsEditing(false);
+        setEditingId(null);
+      };
+    }, [loadTrips]),
   );
+
+  useEffect(() => {
+    if (!targetTripId || trips.length === 0) return;
+    const matchedTrip = trips.find((trip) => trip.id === targetTripId);
+    if (matchedTrip && matchedTrip.id !== selectedTrip?.id) {
+      setSelectedTrip(matchedTrip);
+    }
+  }, [targetTripId, trips, selectedTrip?.id]);
 
   useEffect(() => {
     loadExpenses(selectedTrip?.id);
@@ -100,14 +136,16 @@ const BudgetScreen = () => {
 
   const handleAddExpense = async () => {
     if (!amount || !selectedTrip) {
-      Alert.alert('Error', 'Please enter an amount and select a trip');
+      Alert.alert("Error", "Please enter an amount and select a trip");
       return;
     }
 
     setAddingExpense(true);
     Keyboard.dismiss();
     try {
-      const existingExpense = expenses.find(expense => expense.id === editingId);
+      const existingExpense = expenses.find(
+        (expense) => expense.id === editingId,
+      );
       await saveExpense({
         id: isEditing ? editingId : undefined,
         tripId: selectedTrip.id,
@@ -118,13 +156,13 @@ const BudgetScreen = () => {
         createdAt: existingExpense?.createdAt,
       });
       // ensure keyboard/modal dismissal finishes to avoid Android modal input race
-      await new Promise(res => setTimeout(res, 150));
+      await new Promise((res) => setTimeout(res, 150));
       setShowAddCategory(false);
       closeModal();
       await loadExpenses(selectedTrip.id);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to save expense');
+      Alert.alert("Error", "Failed to save expense");
     } finally {
       setAddingExpense(false);
     }
@@ -134,33 +172,33 @@ const BudgetScreen = () => {
     if (!editingId) return;
 
     Alert.alert(
-      'Delete Expense',
-      'Are you sure you want to delete this expense?',
+      "Delete Expense",
+      "Are you sure you want to delete this expense?",
       [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
             try {
               await deleteExpense(editingId);
-              await new Promise(res => setTimeout(res, 150));
+              await new Promise((res) => setTimeout(res, 150));
               closeModal();
               await loadExpenses(selectedTrip?.id);
             } catch (error) {
               console.error(error);
-              Alert.alert('Error', 'Failed to delete expense');
+              Alert.alert("Error", "Failed to delete expense");
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   const openEditModal = (expense) => {
     setAmount(expense.amount.toString());
     setCategory(expense.category);
-    setNote(expense.note || '');
+    setNote(expense.note || "");
     setEditingId(expense.id);
     setIsEditing(true);
     setModalVisible(true);
@@ -169,9 +207,9 @@ const BudgetScreen = () => {
   const closeModal = () => {
     Keyboard.dismiss();
     setModalVisible(false);
-    setAmount('');
-    setCategory('Food');
-    setNote('');
+    setAmount("");
+    setCategory("Food");
+    setNote("");
     setIsEditing(false);
     setEditingId(null);
   };
@@ -191,31 +229,46 @@ const BudgetScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Expense Tracker</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.headerPlusButton}
-          onPress={() => trips.length > 0 ? setModalVisible(true) : Alert.alert('Error', 'Please create a trip first')}
+          onPress={() =>
+            trips.length > 0
+              ? setModalVisible(true)
+              : Alert.alert("Error", "Please create a trip first")
+          }
         >
           <Ionicons name="add" size={24} color={COLORS.white} />
         </TouchableOpacity>
       </View>
 
       {trips.length > 0 ? (
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Trip Selector */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
             style={styles.tripSelector}
             contentContainerStyle={styles.tripSelectorContent}
             keyboardShouldPersistTaps="always"
           >
-            {trips.map(trip => (
-              <TouchableOpacity 
-                key={trip.id} 
-                style={[styles.tripTab, selectedTrip?.id === trip.id && styles.activeTripTab]}
+            {trips.map((trip) => (
+              <TouchableOpacity
+                key={trip.id}
+                style={[
+                  styles.tripTab,
+                  selectedTrip?.id === trip.id && styles.activeTripTab,
+                ]}
                 onPress={() => setSelectedTrip(trip)}
               >
-                <Text style={[styles.tripTabText, selectedTrip?.id === trip.id && styles.activeTripTabText]}>
+                <Text
+                  style={[
+                    styles.tripTabText,
+                    selectedTrip?.id === trip.id && styles.activeTripTabText,
+                  ]}
+                >
                   {trip.tripName}
                 </Text>
               </TouchableOpacity>
@@ -230,10 +283,17 @@ const BudgetScreen = () => {
             </Text>
             <View style={styles.budgetRow}>
               <View>
-                <Text style={styles.budgetText}>Budget: {selectedTrip?.currency} {selectedTrip?.budget}</Text>
+                <Text style={styles.budgetText}>
+                  Budget: {selectedTrip?.currency} {selectedTrip?.budget}
+                </Text>
               </View>
               <View>
-                <Text style={[styles.budgetText, { color: remainingBudget < 0 ? '#FF5252' : COLORS.white }]}>
+                <Text
+                  style={[
+                    styles.budgetText,
+                    { color: remainingBudget < 0 ? "#FF5252" : COLORS.white },
+                  ]}
+                >
                   Left: {selectedTrip?.currency} {remainingBudget.toFixed(2)}
                 </Text>
               </View>
@@ -243,22 +303,27 @@ const BudgetScreen = () => {
           {/* Categories Grid */}
           <Text style={styles.sectionTitle}>Expense History</Text>
           {expenses.length > 0 ? (
-            expenses.map(expense => (
-              <TouchableOpacity 
-                key={expense.id} 
+            expenses.map((expense) => (
+              <TouchableOpacity
+                key={expense.id}
                 style={styles.expenseItem}
                 onPress={() => openEditModal(expense)}
               >
                 <View style={styles.categoryIconSmall}>
-                  <Ionicons 
-                    name={categories.find(c => c.id === expense.category)?.icon || 'bookmark'} 
-                    size={20} 
-                    color={COLORS.primary} 
+                  <Ionicons
+                    name={
+                      categories.find((c) => c.id === expense.category)?.icon ||
+                      "bookmark"
+                    }
+                    size={20}
+                    color={COLORS.primary}
                   />
                 </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flex: 1, marginLeft: responsiveSize(12) }}>
                   <Text style={styles.expenseCategory}>{expense.category}</Text>
-                  <Text style={styles.expenseNote}>{expense.note || 'No note'}</Text>
+                  <Text style={styles.expenseNote}>
+                    {expense.note || "No note"}
+                  </Text>
                 </View>
                 <Text style={styles.expenseAmount}>
                   - {selectedTrip?.currency} {expense.amount.toFixed(2)}
@@ -274,7 +339,9 @@ const BudgetScreen = () => {
       ) : (
         <View style={styles.centerContainer}>
           <Ionicons name="alert-circle-outline" size={64} color={COLORS.gray} />
-          <Text style={styles.emptyText}>Create a trip first to track expenses!</Text>
+          <Text style={styles.emptyText}>
+            Create a trip first to track expenses!
+          </Text>
         </View>
       )}
 
@@ -286,20 +353,22 @@ const BudgetScreen = () => {
           </TouchableWithoutFeedback>
 
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'android' ? 100 : 0}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "android" ? 100 : 0}
             style={styles.customModalContainer}
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
               <View style={styles.modalView}>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{isEditing ? 'Edit Expense' : 'Add Expense'}</Text>
+                  <Text style={styles.modalTitle}>
+                    {isEditing ? "Edit Expense" : "Add Expense"}
+                  </Text>
                   <TouchableOpacity onPress={closeModal}>
                     <Ionicons name="close" size={24} color={COLORS.black} />
                   </TouchableOpacity>
                 </View>
 
-                <ScrollView 
+                <ScrollView
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={styles.modalScrollContent}
                 >
@@ -314,27 +383,37 @@ const BudgetScreen = () => {
 
                   <Text style={styles.modalLabel}>Category</Text>
                   <View style={styles.categoryGrid}>
-                    {categories.map(cat => (
-                      <TouchableOpacity 
-                        key={cat.id} 
-                        style={[styles.categoryBtn, category === cat.id && styles.activeCategoryBtn]}
+                    {categories.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[
+                          styles.categoryBtn,
+                          category === cat.id && styles.activeCategoryBtn,
+                        ]}
                         onPress={() => {
                           setCategory(cat.id);
                           Keyboard.dismiss();
                         }}
                       >
-                        <Ionicons 
-                          name={cat.icon || 'cash-outline'} 
-                          size={16} 
-                          color={category === cat.id ? COLORS.white : COLORS.primary} 
+                        <Ionicons
+                          name={cat.icon || "cash-outline"}
+                          size={16}
+                          color={
+                            category === cat.id ? COLORS.white : COLORS.primary
+                          }
                         />
-                        <Text style={[styles.categoryBtnText, category === cat.id && styles.activeCategoryBtnText]}>
+                        <Text
+                          style={[
+                            styles.categoryBtnText,
+                            category === cat.id && styles.activeCategoryBtnText,
+                          ]}
+                        >
                           {cat.id}
                         </Text>
                       </TouchableOpacity>
                     ))}
-                    
-                    <TouchableOpacity 
+
+                    <TouchableOpacity
                       style={styles.addCategoryBtn}
                       onPress={() => setShowAddCategory(true)}
                     >
@@ -342,7 +421,9 @@ const BudgetScreen = () => {
                     </TouchableOpacity>
                   </View>
 
-                  <Text style={[styles.modalLabel, { marginTop: 16 }]}>Notes</Text>
+                  <Text style={[styles.modalLabel, { marginTop: responsiveSize(16) }]}>
+                    Notes
+                  </Text>
                   <TextInput
                     style={styles.modalInput}
                     placeholder="What was this for?"
@@ -350,24 +431,30 @@ const BudgetScreen = () => {
                     onChangeText={setNote}
                   />
 
-                  <TouchableOpacity 
-                    style={[styles.saveBtn, addingExpense && { opacity: 0.7 }]} 
+                  <TouchableOpacity
+                    style={[styles.saveBtn, addingExpense && { opacity: 0.7 }]}
                     onPress={handleAddExpense}
                     disabled={addingExpense}
                   >
-                    {addingExpense ? <ActivityIndicator color={COLORS.white} /> : <Text style={styles.saveBtnText}>{isEditing ? 'Update' : 'Save'}</Text>}
+                    {addingExpense ? (
+                      <ActivityIndicator color={COLORS.white} />
+                    ) : (
+                      <Text style={styles.saveBtnText}>
+                        {isEditing ? "Update" : "Save"}
+                      </Text>
+                    )}
                   </TouchableOpacity>
 
                   {isEditing && (
-                    <TouchableOpacity 
-                      style={styles.deleteBtn} 
+                    <TouchableOpacity
+                      style={styles.deleteBtn}
                       onPress={handleDeleteExpense}
                     >
                       <Text style={styles.deleteBtnText}>Delete Expense</Text>
                     </TouchableOpacity>
                   )}
                   {/* Extra space at bottom to ensure delete button is fully visible */}
-                  <View style={{ height: 60 }} />
+                  <View style={{ height: responsiveSize(60) }} />
                 </ScrollView>
               </View>
             </TouchableWithoutFeedback>
@@ -378,23 +465,33 @@ const BudgetScreen = () => {
       {/* Add Category Panel (custom overlay) */}
       {showAddCategory && (
         <View style={styles.customModalOverlay} pointerEvents="box-none">
-          <TouchableWithoutFeedback onPress={() => { setShowAddCategory(false); setNewCategoryName(''); }}>
+          <TouchableWithoutFeedback
+            onPress={() => {
+              Keyboard.dismiss();
+              setShowAddCategory(false);
+              setNewCategoryName("");
+            }}
+          >
             <View style={styles.overlayBackground} />
           </TouchableWithoutFeedback>
 
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'android' ? 100 : 0}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
             style={styles.customModalContainer}
           >
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <View style={styles.modalView}>
+              <View style={[styles.modalView, styles.addCategoryModal]}>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>Add Category</Text>
-                  <TouchableOpacity onPress={() => {
-                    setShowAddCategory(false);
-                    setNewCategoryName('');
-                  }}>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      setShowAddCategory(false);
+                      setNewCategoryName("");
+                    }}
+                  >
                     <Ionicons name="close" size={24} color={COLORS.black} />
                   </TouchableOpacity>
                 </View>
@@ -404,19 +501,33 @@ const BudgetScreen = () => {
                   placeholder="Category name"
                   value={newCategoryName}
                   onChangeText={setNewCategoryName}
-                  autoFocus={true}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={Keyboard.dismiss}
                 />
 
-                <TouchableOpacity 
-                  style={[styles.saveBtn, { marginTop: 20 }]} 
+                <TouchableOpacity
+                  style={[styles.saveBtn, { marginTop: responsiveSize(20) }]}
                   onPress={() => {
                     if (newCategoryName.trim()) {
-                      setCategories([...categories, { id: newCategoryName.trim(), icon: 'bookmark' }]);
+                      setCategories([
+                        ...categories,
+                        {
+                          id: newCategoryName.trim(),
+                          icon: "bookmark",
+                        },
+                      ]);
+
                       setCategory(newCategoryName.trim());
-                      setShowAddCategory(false);
-                      setNewCategoryName('');
+
+                      Keyboard.dismiss();
+
+                      setTimeout(() => {
+                        setShowAddCategory(false);
+                        setNewCategoryName("");
+                      }, 100);
                     } else {
-                      Alert.alert('Error', 'Please enter a category name');
+                      Alert.alert("Error", "Please enter a category name");
                     }
                   }}
                 >
@@ -438,18 +549,18 @@ const styles = StyleSheet.create({
   },
   centerContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: responsiveSize(20),
   },
   header: {
     padding: SPACING.l,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
     fontSize: responsiveFont(24),
     color: COLORS.primary,
   },
@@ -458,8 +569,8 @@ const styles = StyleSheet.create({
     height: responsiveSize(50),
     borderRadius: responsiveSize(14),
     backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     ...SHADOWS.medium,
   },
   content: {
@@ -478,16 +589,16 @@ const styles = StyleSheet.create({
   tripTab: {
     paddingHorizontal: responsiveSize(20),
     paddingVertical: responsiveSize(10),
-    borderRadius: 25,
+    borderRadius: responsiveSize(25),
     backgroundColor: COLORS.white,
-    marginRight: 12,
+    marginRight: responsiveSize(12),
     ...SHADOWS.soft,
   },
   activeTripTab: {
     backgroundColor: COLORS.primary,
   },
   tripTabText: {
-    fontFamily: 'Poppins-Medium',
+    fontFamily: "Poppins-Medium",
     fontSize: responsiveFont(12),
     color: COLORS.gray,
   },
@@ -502,42 +613,42 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xl,
   },
   summaryLabel: {
-    fontFamily: 'Poppins-Medium',
+    fontFamily: "Poppins-Medium",
     fontSize: responsiveFont(14),
-    color: 'rgba(255,255,255,0.8)',
+    color: "rgba(255,255,255,0.8)",
   },
   summaryValue: {
-    fontFamily: 'Urbanist-Bold',
+    fontFamily: "Urbanist-Bold",
     fontSize: responsiveFont(32),
     color: COLORS.white,
-    marginVertical: 8,
+    marginVertical: responsiveSize(8),
   },
   budgetRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-    paddingTop: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: responsiveSize(8),
+    paddingTop: responsiveSize(16),
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.2)',
+    borderTopColor: "rgba(255,255,255,0.2)",
   },
   budgetText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(12),
     color: COLORS.white,
   },
   sectionTitle: {
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: "Poppins-SemiBold",
     fontSize: responsiveFont(18),
     color: COLORS.black,
     marginBottom: SPACING.m,
   },
   expenseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: 16,
-    marginBottom: 12,
+    borderRadius: responsiveSize(16),
+    marginBottom: responsiveSize(12),
     ...SHADOWS.soft,
   },
   categoryIconSmall: {
@@ -545,51 +656,51 @@ const styles = StyleSheet.create({
     height: responsiveSize(40),
     borderRadius: responsiveSize(12),
     backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   expenseCategory: {
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: "Poppins-SemiBold",
     fontSize: responsiveFont(14),
     color: COLORS.black,
   },
   expenseNote: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(12),
     color: COLORS.gray,
   },
   expenseAmount: {
-    fontFamily: 'Urbanist-Bold',
+    fontFamily: "Urbanist-Bold",
     fontSize: responsiveFont(14),
-    color: '#FF5252',
+    color: "#FF5252",
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 40,
   },
   emptyText: {
-    fontFamily: 'Poppins-Regular',
+    fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(14),
     color: COLORS.gray,
-    textAlign: 'center',
+    textAlign: "center",
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     bottom: responsiveSize(110),
     right: responsiveSize(20),
     backgroundColor: COLORS.primary,
     width: responsiveSize(60),
     height: responsiveSize(60),
     borderRadius: responsiveSize(30),
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     ...SHADOWS.medium,
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalView: {
     backgroundColor: COLORS.white,
@@ -597,36 +708,37 @@ const styles = StyleSheet.create({
     borderTopRightRadius: responsiveSize(30),
     padding: responsiveSize(24),
     paddingBottom: responsiveSize(40),
-    maxHeight: '90%',
-    width: '100%',
+    maxHeight: "90%",
+    width: "100%",
     ...SHADOWS.medium,
   },
   modalScrollContent: {
     paddingBottom: 20,
   },
   customModalOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: 'flex-end',
+    justifyContent: "flex-end",
   },
   overlayBackground: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   customModalContainer: {
-    justifyContent: 'flex-end',
+    flex: 1,
+    justifyContent: "flex-end",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: responsiveSize(24),
   },
   modalTitle: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
     fontSize: responsiveFont(20),
     color: COLORS.black,
   },
@@ -634,24 +746,24 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     padding: responsiveSize(16),
     borderRadius: responsiveSize(12),
-    fontFamily: 'Poppins-Regular',
+    fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(16),
     marginBottom: responsiveSize(16),
   },
   modalLabel: {
-    fontFamily: 'Poppins-Medium',
+    fontFamily: "Poppins-Medium",
     fontSize: responsiveFont(14),
     color: COLORS.darkAccent,
     marginBottom: responsiveSize(12),
   },
   categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   categoryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: responsiveSize(12),
     paddingVertical: responsiveSize(8),
     borderRadius: responsiveSize(10),
@@ -664,7 +776,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
   },
   categoryBtnText: {
-    fontFamily: 'Poppins-Medium',
+    fontFamily: "Poppins-Medium",
     fontSize: responsiveFont(12),
     color: COLORS.primary,
     marginLeft: responsiveSize(6),
@@ -679,13 +791,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.primary,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
   },
   addCategoryInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: COLORS.background,
     borderRadius: 10,
     paddingHorizontal: responsiveSize(8),
@@ -697,36 +809,49 @@ const styles = StyleSheet.create({
   addCategoryInput: {
     flex: 1,
     paddingVertical: responsiveSize(8),
-    fontFamily: 'Poppins-Regular',
+    fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(12),
   },
   saveBtn: {
     backgroundColor: COLORS.primary,
     padding: responsiveSize(18),
     borderRadius: responsiveSize(16),
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
     ...SHADOWS.medium,
   },
   saveBtnText: {
     color: COLORS.white,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: "Poppins-SemiBold",
     fontSize: responsiveFont(16),
   },
   deleteBtn: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     padding: responsiveSize(16),
     borderRadius: responsiveSize(16),
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
     borderWidth: 1,
-    borderColor: '#FF5252',
+    borderColor: "#FF5252",
   },
   deleteBtnText: {
-    color: '#FF5252',
-    fontFamily: 'Poppins-SemiBold',
+    color: "#FF5252",
+    fontFamily: "Poppins-SemiBold",
     fontSize: responsiveFont(14),
   },
+  addCategoryModal: {
+  minHeight: responsiveSize(220),
+  paddingBottom: Platform.OS === "ios" ? 30 : 20,
+
+  marginBottom: responsiveSize(100),
+  marginHorizontal: responsiveSize(20),
+
+  borderRadius: responsiveSize(30),
+  overflow: "hidden",
+
+  alignSelf: "center",
+  width: "90%",
+},
 });
 
 export default BudgetScreen;

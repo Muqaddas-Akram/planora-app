@@ -382,6 +382,44 @@ export const markNotificationAsRead = async (reminderId) => {
   await run('UPDATE reminders SET isRead = 1, isDelivered = 1 WHERE id = ?', [reminderId]);
 };
 
+// Save incoming/delivered notifications immediately
+export const saveIncomingNotification = async ({ title, message, tripId = null }) => {
+  const now = new Date();
+  const reminder = {
+    id: createId(),
+    title,
+    message,
+    reminderDate: now.toISOString(),
+    tripId: tripId || null,
+    notificationId: null,
+    createdAt: now.toISOString(),
+    isRead: 0,
+    isDelivered: 1,
+  };
+
+  try {
+    await run(
+      `INSERT INTO reminders (id, title, message, reminderDate, tripId, notificationId, createdAt, isRead, isDelivered)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        reminder.id,
+        reminder.title,
+        reminder.message,
+        reminder.reminderDate,
+        reminder.tripId,
+        reminder.notificationId,
+        reminder.createdAt,
+        reminder.isRead,
+        reminder.isDelivered,
+      ]
+    );
+    return reminder;
+  } catch (error) {
+    console.error('Error saving incoming notification:', error);
+    throw error;
+  }
+};
+
 export const createReminder = async ({ title, message, reminderDate, tripId = null }) => {
   const scheduledDate = new Date(reminderDate);
   let tripName = 'General';

@@ -7,7 +7,8 @@ import {
   Pressable,
   FlatList, 
   ActivityIndicator,
-  Platform,
+  Modal,
+  ScrollView,
   useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,8 +16,37 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SHADOWS, SPACING } from '../../utils/theme';
 import { DEMO_USER_ID } from '../../utils/constants';
-import { cleanupOldNotifications, getReminders, getTrips, markNotificationAsRead } from '../../database/localDb';
+import { cleanupOldNotifications, deleteReminder, getReminders, getTrips, markNotificationAsRead } from '../../database/localDb';
 import { responsiveFont, responsiveSize } from '../../utils/responsive';
+import { generateSmartNotifications } from '../../services/smartNotificationService';
+
+const getNotificationMessage = (notification) =>
+  notification.message || notification.title || '';
+
+const getNotificationKey = (notification) => [
+  notification.tripId || 'general',
+  getNotificationMessage(notification).trim().toLowerCase(),
+].join('|');
+
+const dedupeNotifications = (rows) => {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    const key = getNotificationKey(row);
+    const existing = grouped.get(key);
+
+    if (!existing) {
+      grouped.set(key, { ...row, duplicateIds: [row.id] });
+      return;
+    }
+
+    existing.duplicateIds.push(row.id);
+
+    existing.isRead = existing.isRead && row.isRead;
+  });
+
+  return Array.from(grouped.values());
+};
 
 const NotificationsScreen = ({ navigation }) => {
   const { width } = useWindowDimensions();
@@ -24,21 +54,25 @@ const NotificationsScreen = ({ navigation }) => {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(null);
+  const [selectedNotification, setSelectedNotification] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
       await cleanupOldNotifications();
+      await generateSmartNotifications();
 
       const [reminderRows, tripRows] = await Promise.all([
         getReminders(),
         getTrips(DEMO_USER_ID)
       ]);
-      
       const now = new Date();
-      const delivered = reminderRows.filter(r => new Date(r.reminderDate) <= now);
-      
-      setNotifications(delivered);
+
+      const delivered = reminderRows.filter(
+        r => new Date(r.reminderDate) <= now
+      );
+
+      setNotifications(dedupeNotifications(delivered));
       setTrips(tripRows);
     } catch (error) {
       console.error('Failed to load notifications:', error);
@@ -53,27 +87,55 @@ const NotificationsScreen = ({ navigation }) => {
     }, [loadData])
   );
 
+  const handleNotificationPress = async (item, tripName) => {
+    const notificationIds = (item.duplicateIds || [item.id]).filter(Boolean);
+
+    setSelectedId(item.id);
+    setSelectedNotification({ ...item, tripName });
+    await Promise.all(notificationIds.map(markNotificationAsRead));
+    setNotifications((current) =>
+      current.map((notification) =>
+        notificationIds.includes(notification.id)
+          ? { ...notification, isRead: true }
+          : notification
+      )
+    );
+  };
+
+  const handleDeleteNotification = async (notification) => {
+    const notificationIds = (notification?.duplicateIds || [notification?.id]).filter(Boolean);
+
+    try {
+      await Promise.all(notificationIds.map(deleteReminder));
+      setNotifications((current) =>
+        current.filter((item) => !notificationIds.includes(item.id))
+      );
+
+      if (notificationIds.includes(selectedId)) {
+        setSelectedId(null);
+      }
+
+      if (notificationIds.includes(selectedNotification?.id)) {
+        setSelectedNotification(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
+  };
+
   const renderItem = ({ item }) => {
     const trip = trips.find(t => t.id === item.tripId);
-    const date = new Date(item.reminderDate);
-    const isSelected = selectedId === item.id;
+    const tripName = trip?.tripName || (item.tripId ? 'Trip Update' : 'Planora');
+    const relatedMessage = getNotificationMessage(item);
 
     return (
       <Pressable
         style={[
-          styles.notificationItem, 
+          styles.notificationItem,
           !item.isRead && styles.unreadItem,
-          isSelected && styles.selectedItem
+          selectedId === item.id && styles.selectedItem
         ]}
-        onPress={async () => {
-          setSelectedId(item.id);
-          await markNotificationAsRead(item.id);
-          setNotifications((current) =>
-            current.map((notification) =>
-              notification.id === item.id ? { ...notification, isRead: true } : notification
-            )
-          );
-        }}
+        onPress={() => handleNotificationPress(item, tripName)}
       >
         <View style={styles.iconBox}>
           <Ionicons name="notifications" size={width * 0.06} color={COLORS.primary} />
@@ -81,24 +143,34 @@ const NotificationsScreen = ({ navigation }) => {
         <View style={styles.textContainer}>
           <View style={styles.titleRow}>
             <Text style={[
-              styles.itemTitle, 
+              styles.itemTitle,
               !item.isRead && styles.unreadTitle
             ]} numberOfLines={1}>
-              {trip ? `${trip.tripName}: ` : ''}{item.title}
+              {tripName}
             </Text>
             {!item.isRead && <View style={styles.unreadDot} />}
           </View>
-          <Text style={styles.itemMessage}>{item.message}</Text>
-          <View style={styles.dateRow}>
-            <Ionicons name="time-outline" size={10} color={COLORS.gray} />
-            <Text style={styles.itemDate}>
-              {date.toLocaleString([], { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' })}
-            </Text>
-          </View>
+          <Text style={styles.itemMessage} numberOfLines={1}>
+            {relatedMessage}
+          </Text>
         </View>
       </Pressable>
     );
   };
+
+  const closeNotificationModal = () => {
+    setSelectedNotification(null);
+  };
+
+  const selectedMessage = getNotificationMessage(selectedNotification || {});
+  const selectedDate = selectedNotification?.reminderDate
+    ? new Date(selectedNotification.reminderDate).toLocaleString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: 'short',
+      })
+    : '';
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -134,6 +206,58 @@ const NotificationsScreen = ({ navigation }) => {
           </Text>
         </View>
       )}
+
+      <Modal
+        visible={Boolean(selectedNotification)}
+        transparent
+        animationType="fade"
+        onRequestClose={closeNotificationModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={closeNotificationModal}>
+          <Pressable style={styles.modalBox} onPress={() => {}}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconBox}>
+                <Ionicons name="notifications" size={22} color={COLORS.primary} />
+              </View>
+              <TouchableOpacity onPress={closeNotificationModal} style={styles.modalCloseBtn}>
+                <Ionicons name="close" size={20} color={COLORS.gray} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalTripName} numberOfLines={2}>
+              {selectedNotification?.tripName}
+            </Text>
+
+            {!!selectedNotification?.title && (
+              <Text style={styles.modalReminderTitle}>{selectedNotification.title}</Text>
+            )}
+
+            <ScrollView
+              style={styles.modalMessageScroll}
+              contentContainerStyle={styles.modalMessageContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.modalMessage}>{selectedMessage}</Text>
+            </ScrollView>
+
+            {!!selectedDate && (
+              <View style={styles.modalDateRow}>
+                <Ionicons name="time-outline" size={14} color={COLORS.gray} />
+                <Text style={styles.modalDate}>{selectedDate}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={styles.modalDeleteBtn}
+              onPress={() => handleDeleteNotification(selectedNotification)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="trash-outline" size={18} color={COLORS.white} />
+              <Text style={styles.modalDeleteText}>Delete Notification</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -178,7 +302,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: 24,
+    borderRadius: responsiveSize(24),
     marginBottom: responsiveSize(16),
     width: '100%',
     borderWidth: 1,
@@ -217,19 +341,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     fontSize: responsiveFont(14),
     color: COLORS.black,
+    flex: 1,
   },
   unreadTitle: {
     color: COLORS.darkAccent,
   },
-  selectedTitle: {
-    color: COLORS.white,
-  },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: responsiveSize(8),
+    height: responsiveSize(8),
+    borderRadius: responsiveSize(4),
     backgroundColor: COLORS.primary,
-    marginLeft: 8,
+    marginLeft: responsiveSize(8),
   },
   itemMessage: {
     fontFamily: 'Poppins-Regular',
@@ -238,45 +360,92 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 18,
   },
-  selectedMessage: {
-    color: 'rgba(255, 255, 255, 0.9)',
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SPACING.l,
   },
-  tripBadge: {
+  modalBox: {
+    width: '100%',
+    maxHeight: '72%',
+    backgroundColor: COLORS.white,
+    borderRadius: responsiveSize(22),
+    padding: SPACING.l,
+    ...SHADOWS.medium,
+  },
+  modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(25, 100, 126, 0.05)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginTop: 6,
-    gap: 4,
+    justifyContent: 'space-between',
+    marginBottom: responsiveSize(14),
   },
-  selectedTripBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  modalIconBox: {
+    width: responsiveSize(42),
+    height: responsiveSize(42),
+    borderRadius: responsiveSize(14),
+    backgroundColor: 'rgba(25, 100, 126, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  itemTrip: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: responsiveFont(10),
+  modalCloseBtn: {
+    width: responsiveSize(36),
+    height: responsiveSize(36),
+    borderRadius: responsiveSize(18),
+    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTripName: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: responsiveFont(18),
+    color: COLORS.black,
+  },
+  modalReminderTitle: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: responsiveFont(13),
     color: COLORS.primary,
+    marginTop: responsiveSize(8),
   },
-  selectedTripText: {
-    color: COLORS.white,
+  modalMessageScroll: {
+    marginTop: responsiveSize(12),
+    maxHeight: responsiveSize(260),
   },
-  dateRow: {
+  modalMessageContent: {
+    paddingBottom: responsiveSize(4),
+  },
+  modalMessage: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: responsiveFont(13),
+    color: COLORS.gray,
+    lineHeight: 22,
+  },
+  modalDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    gap: 4,
-    alignSelf: 'flex-end',
+    marginTop: responsiveSize(16),
+    gap: responsiveSize(6),
   },
-  itemDate: {
+  modalDate: {
     fontFamily: 'Poppins-Regular',
-    fontSize: responsiveFont(9),
+    fontSize: responsiveFont(11),
     color: COLORS.gray,
   },
-  selectedDate: {
-    color: 'rgba(255, 255, 255, 0.8)',
+  modalDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E5484D',
+    borderRadius: responsiveSize(14),
+    paddingVertical: responsiveSize(12),
+    marginTop: responsiveSize(18),
+    gap: responsiveSize(8),
+  },
+  modalDeleteText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: responsiveFont(13),
+    color: COLORS.white,
   },
   emptyContainer: {
     flex: 1,
