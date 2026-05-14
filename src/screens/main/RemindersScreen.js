@@ -18,7 +18,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SHADOWS, SPACING } from '../../utils/theme';
-import { responsiveFont, responsiveSize } from '../../utils/responsive';
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius } from '../../utils/responsive';
 import { DEMO_USER_ID } from '../../utils/constants';
 import { createReminder, deleteReminder, getReminders, getTrips, updateReminder } from '../../database/localDb';
 import { classifyTripsByDate } from '../../utils/tripDates';
@@ -240,7 +240,7 @@ const RemindersScreen = () => {
                     setShowTimePicker(false);
                   }}
                 >
-                  <Text style={[styles.tripChipText, selectedTripId === trip.id && styles.tripChipTextActive]}>
+                  <Text style={[styles.tripChipText, selectedTripId === trip.id && styles.tripChipTextActive]} numberOfLines={1}>
                     {trip.tripName}
                   </Text>
                 </TouchableOpacity>
@@ -257,8 +257,8 @@ const RemindersScreen = () => {
                   setShowDatePicker(true);
                 }}
               >
-                <Ionicons name="calendar-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.dateButtonText}>{reminderDate.toLocaleDateString()}</Text>
+                <Ionicons name="calendar-outline" size={responsiveIcon(18)} color={COLORS.primary} />
+                <Text style={styles.dateButtonText} numberOfLines={1}>{reminderDate.toLocaleDateString()}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.dateButton} 
@@ -268,8 +268,8 @@ const RemindersScreen = () => {
                   setShowTimePicker(true);
                 }}
               >
-                <Ionicons name="time-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.dateButtonText}>{reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Ionicons name="time-outline" size={responsiveIcon(18)} color={COLORS.primary} />
+                <Text style={styles.dateButtonText} numberOfLines={1}>{reminderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
               </TouchableOpacity>
             </View>
 
@@ -296,7 +296,7 @@ const RemindersScreen = () => {
 
           {reminders.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="notifications-off-outline" size={48} color={COLORS.gray} />
+              <Ionicons name="notifications-off-outline" size={responsiveIcon(48)} color={COLORS.gray} />
               <Text style={styles.emptyText}>No reminders yet.</Text>
             </View>
           ) : (
@@ -312,22 +312,22 @@ const RemindersScreen = () => {
                   <TouchableOpacity style={styles.reminderCard} onPress={() => handleEditReminder(item)}>
                     <View style={styles.reminderTopRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.reminderTitle}>{item.title}</Text>
-                        <Text style={styles.reminderMessage}>{item.message}</Text>
+                        <Text style={styles.reminderTitle} numberOfLines={1}>{item.title}</Text>
+                        <Text style={styles.reminderMessage} numberOfLines={2}>{item.message}</Text>
                       </View>
                       <TouchableOpacity style={styles.deleteIconButton} onPress={() => handleDeleteReminder(item.id)}>
-                        <Ionicons name="trash-outline" size={18} color={COLORS.error} />
+                        <Ionicons name="trash-outline" size={responsiveIcon(18)} color={COLORS.error} />
                       </TouchableOpacity>
                     </View>
 
                     <View style={styles.metaRow}>
                       <View style={styles.metaPill}>
-                        <Ionicons name="calendar-outline" size={14} color={COLORS.primary} />
-                        <Text style={styles.metaText}>{formatReminderDate(item.reminderDate)}</Text>
+                        <Ionicons name="calendar-outline" size={responsiveIcon(14)} color={COLORS.primary} />
+                        <Text style={styles.metaText} numberOfLines={1}>{formatReminderDate(item.reminderDate)}</Text>
                       </View>
                       <View style={styles.metaPill}>
-                        <Ionicons name="briefcase-outline" size={14} color={COLORS.primary} />
-                        <Text style={styles.metaText}>{tripName}</Text>
+                        <Ionicons name="briefcase-outline" size={responsiveIcon(14)} color={COLORS.primary} />
+                        <Text style={styles.metaText} numberOfLines={1}>{tripName}</Text>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: responsiveFont(13),
     color: COLORS.darkAccent,
-    marginTop: 4,
+    marginTop: responsiveSize(4),
   },
   content: {
     padding: SPACING.l,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
   },
   formCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 24,
+    borderRadius: responsiveRadius(24),
     padding: SPACING.l,
     marginBottom: SPACING.l,
     ...SHADOWS.soft,
@@ -426,12 +426,13 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     paddingHorizontal: responsiveSize(14),
     paddingVertical: responsiveSize(12),
     fontFamily: 'Poppins-Regular',
     color: COLORS.black,
     marginBottom: SPACING.m,
+    fontSize: responsiveFont(14),
   },
   messageInput: {
     minHeight: responsiveSize(100),
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(13),
     color: COLORS.darkAccent,
-    marginBottom: 8,
+    marginBottom: responsiveSize(8),
   },
   tripRow: {
     marginBottom: SPACING.m,
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
     paddingVertical: responsiveSize(10),
     borderRadius: 999,
     backgroundColor: COLORS.lightGray,
-    marginRight: 8,
+    marginRight: responsiveSize(8),
   },
   tripChipActive: {
     backgroundColor: COLORS.primary,
@@ -466,19 +467,19 @@ const styles = StyleSheet.create({
   },
   dateButtonsRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: responsiveSize(10),
     marginBottom: SPACING.m,
   },
   dateButton: {
     flex: 1,
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     paddingHorizontal: responsiveSize(14),
     paddingVertical: responsiveSize(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: responsiveSize(8),
   },
   dateButtonText: {
     fontFamily: 'Poppins-Medium',
@@ -487,10 +488,10 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: COLORS.primary,
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     paddingVertical: responsiveSize(14),
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: responsiveSize(4),
   },
   saveButtonText: {
     color: COLORS.white,
@@ -499,16 +500,17 @@ const styles = StyleSheet.create({
   },
   cancelEditButton: {
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: responsiveSize(12),
   },
   cancelEditText: {
     fontFamily: 'Poppins-Medium',
     color: COLORS.gray,
+    fontSize: responsiveFont(13),
   },
   editActionsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
+    gap: responsiveSize(12),
   },
   deleteEditButton: {
     flex: 1,
@@ -516,12 +518,13 @@ const styles = StyleSheet.create({
     paddingVertical: responsiveSize(12),
     borderWidth: 1,
     borderColor: COLORS.error,
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     marginTop: responsiveSize(4),
   },
   deleteEditText: {
     fontFamily: 'Poppins-Medium',
     color: COLORS.error,
+    fontSize: responsiveFont(13),
   },
   listHeader: {
     flexDirection: 'row',
@@ -542,16 +545,22 @@ const styles = StyleSheet.create({
     marginTop: responsiveSize(10),
     fontFamily: 'Poppins-Regular',
     color: COLORS.gray,
+    fontSize: responsiveFont(14),
   },
   reminderList: {
-    paddingBottom: responsiveSize(60),
+    paddingBottom: responsiveSize(80),
+    paddingHorizontal: SPACING.s,
   },
   reminderCard: {
     backgroundColor: COLORS.white,
-    borderRadius: responsiveSize(20),
+    borderRadius: responsiveRadius(20),
     padding: SPACING.m,
     marginBottom: SPACING.m,
+    marginHorizontal: SPACING.s,
+    width: '100%',
+    alignSelf: 'center',
     ...SHADOWS.soft,
+    elevation: 3,
   },
   reminderTopRow: {
     flexDirection: 'row',
@@ -586,11 +595,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: responsiveSize(10),
     paddingVertical: responsiveSize(6),
+    maxWidth: '48%',
   },
   metaText: {
     fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(11),
     color: COLORS.darkAccent,
+    flexShrink: 1,
   },
   iosPickerContainer: {
     backgroundColor: COLORS.white,

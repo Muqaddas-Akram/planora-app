@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { COLORS, SHADOWS, SPACING } from "../../utils/theme";
-import { responsiveFont, responsiveSize } from "../../utils/responsive";
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius, hp } from "../../utils/responsive";
 import { DEMO_USER_ID } from "../../utils/constants";
 import {
   CURRENCIES,
@@ -243,7 +243,7 @@ const CreateTripScreen = ({ navigation, route }) => {
           onPress={() => navigation.goBack()}
           style={styles.backBtn}
         >
-          <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
+          <Ionicons name="chevron-back" size={responsiveIcon(24)} color={COLORS.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {isEditing ? "Edit Trip" : "Plan New Trip"}
@@ -281,35 +281,35 @@ const CreateTripScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: responsiveSize(8) }]}>
                 <Text style={styles.label}>Start Date</Text>
                 <TouchableOpacity
                   style={styles.datePickerBtn}
                   onPress={() => setShowStartDate(true)}
                 >
-                  <Text style={styles.dateText}>
+                  <Text style={styles.dateText} numberOfLines={1}>
                     {startDate.toLocaleDateString()}
                   </Text>
                   <Ionicons
                     name="calendar-outline"
-                    size={20}
+                    size={responsiveIcon(20)}
                     color={COLORS.primary}
                   />
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
+              <View style={[styles.inputGroup, { flex: 1, marginLeft: responsiveSize(8) }]}>
                 <Text style={styles.label}>End Date</Text>
                 <TouchableOpacity
                   style={styles.datePickerBtn}
                   onPress={() => setShowEndDate(true)}
                 >
-                  <Text style={styles.dateText}>
+                  <Text style={styles.dateText} numberOfLines={1}>
                     {endDate.toLocaleDateString()}
                   </Text>
                   <Ionicons
                     name="calendar-outline"
-                    size={20}
+                    size={responsiveIcon(20)}
                     color={COLORS.primary}
                   />
                 </TouchableOpacity>
@@ -317,7 +317,7 @@ const CreateTripScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: responsiveSize(8) }]}>
                 <Text style={styles.label}>Budget</Text>
                 <TextInput
                   style={styles.input}
@@ -334,12 +334,12 @@ const CreateTripScreen = ({ navigation, route }) => {
                   style={styles.datePickerBtn}
                   onPress={() => setShowCurrency(true)}
                 >
-                  <Text style={styles.dateText}>
+                  <Text style={styles.dateText} numberOfLines={1}>
                     {currency || "Select Currency"}
                   </Text>
                   <Ionicons
                     name="chevron-down"
-                    size={20}
+                    size={responsiveIcon(20)}
                     color={COLORS.primary}
                   />
                 </TouchableOpacity>
@@ -356,7 +356,7 @@ const CreateTripScreen = ({ navigation, route }) => {
               >
                 <Ionicons
                   name="sparkles-outline"
-                  size={14}
+                  size={responsiveIcon(14)}
                   color={COLORS.primary}
                 />
                 <Text style={styles.currencySuggestionText}>
@@ -437,7 +437,7 @@ const CreateTripScreen = ({ navigation, route }) => {
             </ScrollView>
 
             <TouchableOpacity onPress={() => setShowCurrency(false)}>
-              <Text style={{ textAlign: "center", padding: 10, color: "red" }}>
+              <Text style={styles.currencyCloseText}>
                 Close
               </Text>
             </TouchableOpacity>
@@ -475,7 +475,7 @@ const CreateTripScreen = ({ navigation, route }) => {
               <View style={styles.currencyModalHeader}>
                 <Text style={styles.currencyModalTitle}>Select Currency</Text>
                 <TouchableOpacity onPress={closeCurrencyPicker}>
-                  <Ionicons name="close" size={22} color={COLORS.black} />
+                  <Ionicons name="close" size={responsiveIcon(22)} color={COLORS.black} />
                 </TouchableOpacity>
               </View>
 
@@ -500,7 +500,7 @@ const CreateTripScreen = ({ navigation, route }) => {
                 contentContainerStyle={styles.currencyList}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.currencyItem}
+                    style={styles.currencyModalItem}
                     onPress={() => {
                       Keyboard.dismiss();
                       setCurrency(item.code);
@@ -535,9 +535,9 @@ const styles = StyleSheet.create({
     padding: SPACING.l,
   },
   backBtn: {
-    padding: 8,
+    padding: responsiveSize(8),
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: responsiveRadius(12),
     ...SHADOWS.soft,
   },
   headerTitle: {
@@ -558,12 +558,12 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Medium",
     fontSize: responsiveFont(14),
     color: COLORS.darkAccent,
-    marginBottom: 8,
+    marginBottom: responsiveSize(8),
   },
   input: {
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     fontFamily: "Poppins-Regular",
     ...SHADOWS.soft,
     fontSize: responsiveFont(14),
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   dropdownBtn: {
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
     fontSize: responsiveFont(13),
     color: COLORS.black,
     flex: 1,
-    marginRight: 8,
+    marginRight: responsiveSize(8),
   },
   currencySuggestionPill: {
     flexDirection: "row",
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
     marginBottom: responsiveSize(14),
   },
   currencySuggestionText: {
-    marginLeft: 6,
+    marginLeft: responsiveSize(6),
     fontFamily: "Poppins-Medium",
     fontSize: responsiveFont(12),
     color: COLORS.primary,
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
   datePickerBtn: {
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -617,13 +617,14 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(14),
     color: COLORS.black,
+    marginRight: responsiveSize(8),
   },
   saveBtn: {
     backgroundColor: COLORS.primary,
     padding: responsiveSize(18),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     alignItems: "center",
-    marginTop: 20,
+    marginTop: responsiveSize(20),
     ...SHADOWS.medium,
   },
   saveBtnText: {
@@ -634,9 +635,9 @@ const styles = StyleSheet.create({
   deleteBtn: {
     backgroundColor: "transparent",
     padding: responsiveSize(18),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     alignItems: "center",
-    marginTop: 12,
+    marginTop: responsiveSize(12),
     borderWidth: 1,
     borderColor: "#FF5252",
   },
@@ -660,8 +661,8 @@ const styles = StyleSheet.create({
     flex: 1,
     maxHeight: "78%",
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: responsiveSize(22),
-    borderTopRightRadius: responsiveSize(22),
+    borderTopLeftRadius: responsiveRadius(22),
+    borderTopRightRadius: responsiveRadius(22),
     paddingHorizontal: SPACING.l,
     paddingTop: SPACING.l,
     paddingBottom: SPACING.xl,
@@ -679,7 +680,7 @@ const styles = StyleSheet.create({
   },
   currencySearchInput: {
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     paddingHorizontal: responsiveSize(14),
     paddingVertical: responsiveSize(10),
     fontFamily: "Poppins-Regular",
@@ -689,7 +690,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.l,
     flexGrow: 1,
   },
-  currencyItem: {
+  currencyModalItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: responsiveSize(12),
@@ -716,27 +717,33 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
-    padding: 20,
+    padding: responsiveSize(20),
   },
-
   currencyBox: {
     backgroundColor: "white",
-    borderRadius: 15,
-    maxHeight: 400,
-    padding: 10,
+    borderRadius: responsiveRadius(15),
+    maxHeight: hp(50),
+    padding: responsiveSize(10),
   },
-
   searchInput: {
     backgroundColor: "#f2f2f2",
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 10,
+    padding: responsiveSize(10),
+    borderRadius: responsiveRadius(10),
+    marginBottom: responsiveSize(10),
+    fontFamily: "Poppins-Regular",
+    fontSize: responsiveFont(14),
   },
-
   currencyItem: {
-    padding: 12,
+    padding: responsiveSize(12),
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+  },
+  currencyCloseText: {
+    textAlign: "center",
+    padding: responsiveSize(10),
+    color: "red",
+    fontFamily: "Poppins-Medium",
+    fontSize: responsiveFont(14),
   },
 });
 

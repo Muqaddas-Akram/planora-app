@@ -9,7 +9,7 @@ import BudgetScreen from '../screens/main/BudgetScreen';
 import ChecklistScreen from '../screens/main/ChecklistScreen';
 import RemindersScreen from '../screens/main/RemindersScreen';
 import { COLORS, SHADOWS } from '../utils/theme';
-import { responsiveFont, responsiveSize } from '../utils/responsive';
+import { responsiveFont, responsiveSize, responsiveIcon } from '../utils/responsive';
 
 const Tab = createBottomTabNavigator();
 
@@ -39,7 +39,7 @@ const TabNavigator = () => {
               styles.iconContainer,
               focused && styles.activeIconContainer
             ]}>
-              <Ionicons name={iconName} size={24} color={color} />
+              <Ionicons name={iconName} size={responsiveIcon(22)} color={color} />
             </View>
           );
         },

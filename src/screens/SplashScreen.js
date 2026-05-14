@@ -1,9 +1,7 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, StyleSheet } from 'react-native';
 import { COLORS, FONTS } from '../utils/theme';
-import { responsiveFont, responsiveSize } from '../utils/responsive';
-
-const { width } = Dimensions.get('window');
+import { responsiveFont, responsiveSize, wp } from '../utils/responsive';
 
 const SplashScreen = () => {
   return (
@@ -33,8 +31,8 @@ const styles = StyleSheet.create({
     marginTop: -responsiveSize(120), 
   },
   logo: {
-    width: width * 0.65,
-    height: width * 0.65,
+    width: wp(65),
+    height: wp(65),
     marginBottom: -responsiveSize(90), 
   },
   appName: {

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SHADOWS, SPACING } from '../utils/theme';
-import { responsiveFont, responsiveSize } from '../utils/responsive';
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius } from '../utils/responsive';
 
 const TripCard = ({ trip, onPress }) => {
   const startDate = new Date(trip.startDate).toLocaleDateString('en-US', {
@@ -18,16 +18,16 @@ const TripCard = ({ trip, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.iconContainer}>
-        <Ionicons name="airplane" size={24} color={COLORS.primary} />
+        <Ionicons name="airplane" size={responsiveIcon(24)} color={COLORS.primary} />
       </View>
       <View style={styles.details}>
-        <Text style={styles.tripName}>{trip.tripName}</Text>
-        <Text style={styles.destination}>{trip.destination}</Text>
+        <Text style={styles.tripName} numberOfLines={1}>{trip.tripName}</Text>
+        <Text style={styles.destination} numberOfLines={1}>{trip.destination}</Text>
         <Text style={styles.dates}>{startDate} - {endDate}</Text>
       </View>
       <View style={styles.budgetContainer}>
         <Text style={styles.budgetLabel}>Budget</Text>
-        <Text style={styles.budgetValue}>{trip.currency} {trip.budget}</Text>
+        <Text style={styles.budgetValue} numberOfLines={1}>{trip.currency} {trip.budget}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -36,7 +36,7 @@ const TripCard = ({ trip, onPress }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: responsiveRadius(20),
     padding: SPACING.m,
     flexDirection: 'row',
     alignItems: 'center',
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     width: responsiveSize(50),
     height: responsiveSize(50),
-    borderRadius: responsiveSize(15),
+    borderRadius: responsiveRadius(15),
     backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
@@ -69,10 +69,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Medium',
     fontSize: responsiveFont(10),
     color: COLORS.primary,
-    marginTop: 4,
+    marginTop: responsiveSize(4),
   },
   budgetContainer: {
     alignItems: 'flex-end',
+    maxWidth: '35%',
   },
   budgetLabel: {
     fontFamily: 'Poppins-Regular',

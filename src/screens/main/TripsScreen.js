@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { DEMO_USER_ID } from "../../utils/constants";
 import { COLORS, SHADOWS, SPACING } from "../../utils/theme";
-import { responsiveFont, responsiveSize } from "../../utils/responsive";
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius } from "../../utils/responsive";
 import TripCard from "../../components/TripCard";
 import { getTrips, getExpenses } from "../../database/localDb";
 import { classifyTripsByDate } from "../../utils/tripDates";
@@ -90,8 +90,8 @@ const TripsScreen = ({ navigation }) => {
     <View style={styles.recentTripCard}>
       <View style={styles.recentTripHeader}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.recentTripName}>{item.tripName}</Text>
-          <Text style={styles.recentTripDest}>{item.destination}</Text>
+          <Text style={styles.recentTripName} numberOfLines={1}>{item.tripName}</Text>
+          <Text style={styles.recentTripDest} numberOfLines={1}>{item.destination}</Text>
         </View>
         <View style={styles.removalWarning}>
           <Text style={styles.removalText}>
@@ -110,13 +110,13 @@ const TripsScreen = ({ navigation }) => {
       <View style={styles.recentTripStats}>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Total Expenses</Text>
-          <Text style={styles.statValue}>
+          <Text style={styles.statValue} numberOfLines={1}>
             {item.currency} {item.totalExpenses.toFixed(0)}
           </Text>
         </View>
         <View style={styles.statItem}>
           <Text style={styles.statLabel}>Budget</Text>
-          <Text style={styles.statValue}>
+          <Text style={styles.statValue} numberOfLines={1}>
             {item.currency} {item.budget.toFixed(0)}
           </Text>
         </View>
@@ -133,10 +133,10 @@ const TripsScreen = ({ navigation }) => {
           </Text>
           {item.expenses.slice(0, 3).map((expense, idx) => (
             <View key={expense.id} style={styles.expenseItem}>
-              <View>
-                <Text style={styles.expenseCategory}>{expense.category}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.expenseCategory} numberOfLines={1}>{expense.category}</Text>
                 {expense.note && (
-                  <Text style={styles.expenseNote}>{expense.note}</Text>
+                  <Text style={styles.expenseNote} numberOfLines={1}>{expense.note}</Text>
                 )}
               </View>
               <Text style={styles.expenseAmount}>
@@ -160,7 +160,7 @@ const TripsScreen = ({ navigation }) => {
 
   const renderEmptyRecentTrips = () => (
     <View style={styles.emptyRecentTripsContainer}>
-      <Ionicons name="time-outline" size={60} color={COLORS.secondary} />
+      <Ionicons name="time-outline" size={responsiveIcon(60)} color={COLORS.secondary} />
       <Text style={styles.emptyRecentTitle}>No Recent Trips Here</Text>
       <Text style={styles.emptyRecentSubtitle}>
         Trips that ended in the last 7 days will appear here with full details
@@ -170,14 +170,14 @@ const TripsScreen = ({ navigation }) => {
 
   const renderEmptyActivTrips = () => (
     <View style={styles.emptyTripsContainer}>
-      <Ionicons name="calendar-outline" size={48} color={COLORS.gray} />
+      <Ionicons name="calendar-outline" size={responsiveIcon(48)} color={COLORS.gray} />
       <Text style={styles.emptyTripsText}>No active trips right now</Text>
     </View>
   );
 
   const renderEmptyUpcomingTrips = () => (
     <View style={styles.emptyTripsContainer}>
-      <Ionicons name="airplane-outline" size={48} color={COLORS.gray} />
+      <Ionicons name="airplane-outline" size={responsiveIcon(48)} color={COLORS.gray} />
       <Text style={styles.emptyTripsText}>No upcoming trips planned</Text>
     </View>
   );
@@ -208,7 +208,7 @@ const TripsScreen = ({ navigation }) => {
           style={styles.addBtn}
           onPress={() => navigation.navigate("CreateTrip")}
         >
-          <Ionicons name="add" size={24} color={COLORS.white} />
+          <Ionicons name="add" size={responsiveIcon(24)} color={COLORS.white} />
         </TouchableOpacity>
       </View>
 
@@ -260,7 +260,7 @@ const TripsScreen = ({ navigation }) => {
           <View style={styles.emptyContainer}>
             <Ionicons
               name="briefcase-outline"
-              size={80}
+              size={responsiveIcon(80)}
               color={COLORS.secondary}
             />
             <Text style={styles.emptyTitle}>No trips found</Text>
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   addBtn: {
     width: responsiveSize(50),
     height: responsiveSize(50),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
@@ -308,11 +308,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: SPACING.l,
-    paddingTop: 4,
+    paddingTop: responsiveSize(4),
   },
   listContent: {
-    paddingBottom: 100,
-    paddingHorizontal: 4,
+    paddingBottom: responsiveSize(100),
+    paddingHorizontal: responsiveSize(4),
   },
   centerContainer: {
     flex: 1,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingBottom: 100,
+    paddingBottom: responsiveSize(100),
   },
   emptyTitle: {
     fontFamily: "Poppins-SemiBold",
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(14),
     color: COLORS.gray,
-    marginTop: 8,
+    marginTop: responsiveSize(8),
     textAlign: "center",
     marginBottom: SPACING.xl,
   },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.m,
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     ...SHADOWS.medium,
   },
   startBtnText: {
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   },
   recentTripCard: {
     backgroundColor: COLORS.white,
-    borderRadius: responsiveSize(20),
+    borderRadius: responsiveRadius(20),
     padding: SPACING.m,
     marginBottom: SPACING.m,
     marginHorizontal: responsiveSize(2),
@@ -388,13 +388,14 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(13),
     color: COLORS.gray,
-    marginTop: 4,
+    marginTop: responsiveSize(4),
   },
   removalWarning: {
     backgroundColor: "#FFF3CD",
     paddingHorizontal: SPACING.s,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: responsiveSize(4),
+    borderRadius: responsiveRadius(8),
+    marginLeft: responsiveSize(8),
   },
   removalText: {
     fontFamily: "Poppins-Medium",
@@ -420,6 +421,7 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: "center",
+    flex: 1,
   },
   statLabel: {
     fontFamily: "Poppins-Regular",
@@ -458,12 +460,13 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(10),
     color: COLORS.gray,
-    marginTop: 2,
+    marginTop: responsiveSize(2),
   },
   expenseAmount: {
     fontFamily: "Poppins-SemiBold",
     fontSize: responsiveFont(12),
     color: COLORS.primary,
+    marginLeft: responsiveSize(8),
   },
   moreExpenses: {
     fontFamily: "Poppins-Regular",
@@ -479,7 +482,7 @@ const styles = StyleSheet.create({
     color: "#856404",
     backgroundColor: "#FFF3CD",
     padding: SPACING.s,
-    borderRadius: 8,
+    borderRadius: responsiveRadius(8),
     textAlign: "center",
     marginTop: SPACING.m,
   },
@@ -488,9 +491,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: SPACING.xl,
     backgroundColor: COLORS.white,
-    borderRadius: 20,
+    borderRadius: responsiveRadius(20),
     marginVertical: SPACING.m,
-    marginHorizontal: 2,
+    marginHorizontal: responsiveSize(2),
     overflow: "visible",
 
     ...SHADOWS.soft,
@@ -514,7 +517,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: SPACING.l,
     backgroundColor: COLORS.white,
-    borderRadius: 16,
+    borderRadius: responsiveRadius(16),
     marginVertical: SPACING.m,
     ...SHADOWS.soft,
   },

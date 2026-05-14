@@ -18,7 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DEMO_USER_ID } from '../../utils/constants';
 import { COLORS, SHADOWS, SPACING } from '../../utils/theme';
-import { responsiveFont, responsiveSize } from '../../utils/responsive';
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius } from '../../utils/responsive';
 
 import {
   deleteChecklistItem,
@@ -89,6 +89,11 @@ const TEMPLATES = {
   ],
 };
 
+const GENERAL_TRIP = {
+  id: 'general-checklist',
+  tripName: 'General List',
+};
+
 const ChecklistScreen = ({ route }) => {
   const [trips, setTrips] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
@@ -108,7 +113,7 @@ const ChecklistScreen = ({ route }) => {
 
       const { active, upcoming } = classifyTripsByDate(tripsList);
 
-      const availableTrips = [...active, ...upcoming];
+      const availableTrips = [GENERAL_TRIP, ...active, ...upcoming];
 
       setTrips(availableTrips);
 
@@ -143,11 +148,6 @@ const ChecklistScreen = ({ route }) => {
   }, [targetTripId]);
 
   const loadChecklistItems = useCallback(async (tripId) => {
-    if (!tripId) {
-      setItems([]);
-      return;
-    }
-
     try {
       const itemsList = await getChecklistItems(tripId);
       setItems(itemsList);
@@ -174,16 +174,18 @@ const ChecklistScreen = ({ route }) => {
     }
   }, [targetTripId, trips, selectedTrip?.id]);
 
+  const currentChecklistTripId = selectedTrip?.id || GENERAL_TRIP.id;
+
   useEffect(() => {
-    loadChecklistItems(selectedTrip?.id);
-  }, [selectedTrip, loadChecklistItems]);
+    loadChecklistItems(currentChecklistTripId);
+  }, [currentChecklistTripId, loadChecklistItems]);
 
   const addItem = async (itemName) => {
-    if (!itemName.trim() || !selectedTrip) return;
+    if (!itemName.trim()) return;
 
     try {
       await saveChecklistItem({
-        tripId: selectedTrip.id,
+        tripId: currentChecklistTripId,
         item: itemName.trim(),
         completed: false,
         createdAt: new Date().toISOString(),
@@ -191,7 +193,7 @@ const ChecklistScreen = ({ route }) => {
 
       setNewItem('');
 
-      await loadChecklistItems(selectedTrip.id);
+      await loadChecklistItems(currentChecklistTripId);
     } catch (error) {
       console.error(error);
     }
@@ -203,7 +205,7 @@ const ChecklistScreen = ({ route }) => {
         completed: !currentStatus,
       });
 
-      await loadChecklistItems(selectedTrip?.id);
+      await loadChecklistItems(currentChecklistTripId);
     } catch (error) {
       console.error(error);
     }
@@ -213,22 +215,20 @@ const ChecklistScreen = ({ route }) => {
     try {
       await deleteChecklistItem(itemId);
 
-      await loadChecklistItems(selectedTrip?.id);
+      await loadChecklistItems(currentChecklistTripId);
     } catch (error) {
       console.error(error);
     }
   };
 
   const applyTemplate = async (templateName) => {
-    if (!selectedTrip) return;
-
     try {
       const templateItems = TEMPLATES[templateName];
 
       await Promise.all(
         templateItems.map(item =>
           saveChecklistItem({
-            tripId: selectedTrip.id,
+            tripId: currentChecklistTripId,
             item,
             completed: false,
             createdAt: new Date().toISOString(),
@@ -236,7 +236,7 @@ const ChecklistScreen = ({ route }) => {
         )
       );
 
-      await loadChecklistItems(selectedTrip.id);
+      await loadChecklistItems(currentChecklistTripId);
 
       Alert.alert(
         'Template Added',
@@ -293,8 +293,7 @@ const ChecklistScreen = ({ route }) => {
           <Text style={styles.title}>Packing List</Text>
         </View>
 
-        {trips.length > 0 ? (
-          <View style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
             <View style={styles.topSection}>
               {/* Trips */}
               <ScrollView
@@ -319,6 +318,7 @@ const ChecklistScreen = ({ route }) => {
                         selectedTrip?.id === trip.id &&
                           styles.activeTripTabText,
                       ]}
+                      numberOfLines={1}
                     >
                       {trip.tripName}
                     </Text>
@@ -393,7 +393,7 @@ const ChecklistScreen = ({ route }) => {
                 >
                   <Ionicons
                     name="add"
-                    size={responsiveSize(24)}
+                    size={responsiveIcon(24)}
                     color={COLORS.white}
                   />
                 </TouchableOpacity>
@@ -410,7 +410,7 @@ const ChecklistScreen = ({ route }) => {
                 <View style={styles.emptyItemsContainer}>
                   <Ionicons
                     name="clipboard-outline"
-                    size={responsiveSize(60)}
+                    size={responsiveIcon(60)}
                     color={COLORS.gray}
                   />
 
@@ -437,7 +437,7 @@ const ChecklistScreen = ({ route }) => {
                           ? 'checkbox'
                           : 'square-outline'
                       }
-                      size={responsiveSize(24)}
+                      size={responsiveIcon(24)}
                       color={
                         item.completed
                           ? COLORS.primary
@@ -451,6 +451,7 @@ const ChecklistScreen = ({ route }) => {
                         item.completed &&
                           styles.itemTextCompleted,
                       ]}
+                      numberOfLines={2}
                     >
                       {item.item}
                     </Text>
@@ -462,7 +463,7 @@ const ChecklistScreen = ({ route }) => {
                   >
                     <Ionicons
                       name="trash-outline"
-                      size={responsiveSize(20)}
+                      size={responsiveIcon(20)}
                       color={COLORS.error}
                     />
                   </TouchableOpacity>
@@ -470,19 +471,6 @@ const ChecklistScreen = ({ route }) => {
               )}
             />
           </View>
-        ) : (
-          <View style={styles.centerContainer}>
-            <Ionicons
-              name="briefcase-outline"
-              size={responsiveSize(70)}
-              color={COLORS.gray}
-            />
-
-            <Text style={styles.emptyText}>
-              Create a trip first to manage checklist!
-            </Text>
-          </View>
-        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -525,7 +513,7 @@ const styles = StyleSheet.create({
   tripTab: {
     paddingHorizontal: responsiveSize(18),
     paddingVertical: responsiveSize(10),
-    borderRadius: responsiveSize(24),
+    borderRadius: responsiveRadius(24),
     backgroundColor: COLORS.white,
     marginRight: responsiveSize(10),
     ...SHADOWS.soft,
@@ -548,7 +536,7 @@ const styles = StyleSheet.create({
   progressCard: {
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(20),
+    borderRadius: responsiveRadius(20),
     marginTop: responsiveSize(18),
     marginBottom: responsiveSize(18),
     ...SHADOWS.soft,
@@ -576,14 +564,14 @@ const styles = StyleSheet.create({
   progressBar: {
     height: responsiveSize(10),
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(10),
+    borderRadius: responsiveRadius(10),
     overflow: 'hidden',
   },
 
   progressFill: {
     height: '100%',
     backgroundColor: COLORS.primary,
-    borderRadius: responsiveSize(10),
+    borderRadius: responsiveRadius(10),
   },
 
   sectionTitle: {
@@ -601,7 +589,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.secondary,
     paddingHorizontal: responsiveSize(16),
     paddingVertical: responsiveSize(10),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     marginRight: responsiveSize(10),
     ...SHADOWS.soft,
   },
@@ -624,7 +612,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     paddingHorizontal: responsiveSize(14),
     paddingVertical: responsiveSize(14),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     fontFamily: 'Poppins-Regular',
     fontSize: responsiveFont(13),
     color: COLORS.black,
@@ -635,7 +623,7 @@ const styles = StyleSheet.create({
   addBtn: {
     width: responsiveSize(52),
     height: responsiveSize(52),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -653,7 +641,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(18),
+    borderRadius: responsiveRadius(18),
     marginBottom: responsiveSize(12),
     ...SHADOWS.soft,
   },

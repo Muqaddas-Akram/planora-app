@@ -20,7 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DEMO_USER_ID } from "../../utils/constants";
 import { COLORS, SHADOWS, SPACING, FONTS } from "../../utils/theme";
-import { responsiveFont, responsiveSize } from "../../utils/responsive";
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius } from "../../utils/responsive";
 import {
   deleteExpense,
   getExpenses,
@@ -237,7 +237,7 @@ const BudgetScreen = ({ route }) => {
               : Alert.alert("Error", "Please create a trip first")
           }
         >
-          <Ionicons name="add" size={24} color={COLORS.white} />
+          <Ionicons name="add" size={responsiveIcon(24)} color={COLORS.white} />
         </TouchableOpacity>
       </View>
 
@@ -268,6 +268,7 @@ const BudgetScreen = ({ route }) => {
                     styles.tripTabText,
                     selectedTrip?.id === trip.id && styles.activeTripTabText,
                   ]}
+                  numberOfLines={1}
                 >
                   {trip.tripName}
                 </Text>
@@ -278,21 +279,22 @@ const BudgetScreen = ({ route }) => {
           {/* Summary Card */}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Total Spent</Text>
-            <Text style={styles.summaryValue}>
+            <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit>
               {selectedTrip?.currency} {totalSpent.toFixed(2)}
             </Text>
             <View style={styles.budgetRow}>
-              <View>
-                <Text style={styles.budgetText}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.budgetText} numberOfLines={1}>
                   Budget: {selectedTrip?.currency} {selectedTrip?.budget}
                 </Text>
               </View>
-              <View>
+              <View style={{ flex: 1, alignItems: 'flex-end' }}>
                 <Text
                   style={[
                     styles.budgetText,
                     { color: remainingBudget < 0 ? "#FF5252" : COLORS.white },
                   ]}
+                  numberOfLines={1}
                 >
                   Left: {selectedTrip?.currency} {remainingBudget.toFixed(2)}
                 </Text>
@@ -315,17 +317,17 @@ const BudgetScreen = ({ route }) => {
                       categories.find((c) => c.id === expense.category)?.icon ||
                       "bookmark"
                     }
-                    size={20}
+                    size={responsiveIcon(20)}
                     color={COLORS.primary}
                   />
                 </View>
                 <View style={{ flex: 1, marginLeft: responsiveSize(12) }}>
-                  <Text style={styles.expenseCategory}>{expense.category}</Text>
-                  <Text style={styles.expenseNote}>
+                  <Text style={styles.expenseCategory} numberOfLines={1}>{expense.category}</Text>
+                  <Text style={styles.expenseNote} numberOfLines={1}>
                     {expense.note || "No note"}
                   </Text>
                 </View>
-                <Text style={styles.expenseAmount}>
+                <Text style={styles.expenseAmount} numberOfLines={1}>
                   - {selectedTrip?.currency} {expense.amount.toFixed(2)}
                 </Text>
               </TouchableOpacity>
@@ -338,7 +340,7 @@ const BudgetScreen = ({ route }) => {
         </ScrollView>
       ) : (
         <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color={COLORS.gray} />
+          <Ionicons name="alert-circle-outline" size={responsiveIcon(64)} color={COLORS.gray} />
           <Text style={styles.emptyText}>
             Create a trip first to track expenses!
           </Text>
@@ -364,7 +366,7 @@ const BudgetScreen = ({ route }) => {
                     {isEditing ? "Edit Expense" : "Add Expense"}
                   </Text>
                   <TouchableOpacity onPress={closeModal}>
-                    <Ionicons name="close" size={24} color={COLORS.black} />
+                    <Ionicons name="close" size={responsiveIcon(24)} color={COLORS.black} />
                   </TouchableOpacity>
                 </View>
 
@@ -397,7 +399,7 @@ const BudgetScreen = ({ route }) => {
                       >
                         <Ionicons
                           name={cat.icon || "cash-outline"}
-                          size={16}
+                          size={responsiveIcon(16)}
                           color={
                             category === cat.id ? COLORS.white : COLORS.primary
                           }
@@ -407,6 +409,7 @@ const BudgetScreen = ({ route }) => {
                             styles.categoryBtnText,
                             category === cat.id && styles.activeCategoryBtnText,
                           ]}
+                          numberOfLines={1}
                         >
                           {cat.id}
                         </Text>
@@ -417,7 +420,7 @@ const BudgetScreen = ({ route }) => {
                       style={styles.addCategoryBtn}
                       onPress={() => setShowAddCategory(true)}
                     >
-                      <Ionicons name="add" size={20} color={COLORS.primary} />
+                      <Ionicons name="add" size={responsiveIcon(20)} color={COLORS.primary} />
                     </TouchableOpacity>
                   </View>
 
@@ -492,7 +495,7 @@ const BudgetScreen = ({ route }) => {
                       setNewCategoryName("");
                     }}
                   >
-                    <Ionicons name="close" size={24} color={COLORS.black} />
+                    <Ionicons name="close" size={responsiveIcon(24)} color={COLORS.black} />
                   </TouchableOpacity>
                 </View>
 
@@ -567,7 +570,7 @@ const styles = StyleSheet.create({
   headerPlusButton: {
     width: responsiveSize(50),
     height: responsiveSize(50),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     backgroundColor: COLORS.primary,
     justifyContent: "center",
     alignItems: "center",
@@ -575,21 +578,21 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: SPACING.l,
-    paddingBottom: 100,
+    paddingBottom: responsiveSize(100),
   },
   tripSelector: {
     marginBottom: SPACING.l,
     marginVertical: responsiveSize(10),
   },
   tripSelectorContent: {
-    paddingLeft: 4,
+    paddingLeft: responsiveSize(4),
     paddingRight: SPACING.l,
-    paddingVertical: 4,
+    paddingVertical: responsiveSize(4),
   },
   tripTab: {
     paddingHorizontal: responsiveSize(20),
     paddingVertical: responsiveSize(10),
-    borderRadius: responsiveSize(25),
+    borderRadius: responsiveRadius(25),
     backgroundColor: COLORS.white,
     marginRight: responsiveSize(12),
     ...SHADOWS.soft,
@@ -608,7 +611,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: COLORS.primary,
     padding: SPACING.xl,
-    borderRadius: 24,
+    borderRadius: responsiveRadius(24),
     ...SHADOWS.medium,
     marginBottom: SPACING.xl,
   },
@@ -647,14 +650,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: COLORS.white,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     marginBottom: responsiveSize(12),
     ...SHADOWS.soft,
   },
   categoryIconSmall: {
     width: responsiveSize(40),
     height: responsiveSize(40),
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     backgroundColor: COLORS.background,
     justifyContent: "center",
     alignItems: "center",
@@ -673,16 +676,18 @@ const styles = StyleSheet.create({
     fontFamily: "Urbanist-Bold",
     fontSize: responsiveFont(14),
     color: "#FF5252",
+    marginLeft: responsiveSize(8),
   },
   emptyState: {
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: responsiveSize(40),
   },
   emptyText: {
     fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(14),
     color: COLORS.gray,
     textAlign: "center",
+    marginTop: responsiveSize(12),
   },
   fab: {
     position: "absolute",
@@ -704,8 +709,8 @@ const styles = StyleSheet.create({
   },
   modalView: {
     backgroundColor: COLORS.white,
-    borderTopLeftRadius: responsiveSize(30),
-    borderTopRightRadius: responsiveSize(30),
+    borderTopLeftRadius: responsiveRadius(30),
+    borderTopRightRadius: responsiveRadius(30),
     padding: responsiveSize(24),
     paddingBottom: responsiveSize(40),
     maxHeight: "90%",
@@ -713,7 +718,7 @@ const styles = StyleSheet.create({
     ...SHADOWS.medium,
   },
   modalScrollContent: {
-    paddingBottom: 20,
+    paddingBottom: responsiveSize(20),
   },
   customModalOverlay: {
     position: "absolute",
@@ -745,7 +750,7 @@ const styles = StyleSheet.create({
   modalInput: {
     backgroundColor: COLORS.background,
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     fontFamily: "Poppins-Regular",
     fontSize: responsiveFont(16),
     marginBottom: responsiveSize(16),
@@ -759,14 +764,14 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: responsiveSize(8),
   },
   categoryBtn: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: responsiveSize(12),
     paddingVertical: responsiveSize(8),
-    borderRadius: responsiveSize(10),
+    borderRadius: responsiveRadius(10),
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.secondary,
@@ -787,7 +792,7 @@ const styles = StyleSheet.create({
   addCategoryBtn: {
     width: responsiveSize(44),
     height: responsiveSize(44),
-    borderRadius: responsiveSize(10),
+    borderRadius: responsiveRadius(10),
     backgroundColor: COLORS.background,
     borderWidth: 1,
     borderColor: COLORS.primary,
@@ -799,12 +804,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.background,
-    borderRadius: 10,
+    borderRadius: responsiveRadius(10),
     paddingHorizontal: responsiveSize(8),
     borderWidth: 1,
     borderColor: COLORS.primary,
     flex: 1,
-    minWidth: 150,
+    minWidth: responsiveSize(150),
   },
   addCategoryInput: {
     flex: 1,
@@ -815,9 +820,9 @@ const styles = StyleSheet.create({
   saveBtn: {
     backgroundColor: COLORS.primary,
     padding: responsiveSize(18),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     alignItems: "center",
-    marginTop: 20,
+    marginTop: responsiveSize(20),
     ...SHADOWS.medium,
   },
   saveBtnText: {
@@ -828,9 +833,9 @@ const styles = StyleSheet.create({
   deleteBtn: {
     backgroundColor: "transparent",
     padding: responsiveSize(16),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     alignItems: "center",
-    marginTop: 8,
+    marginTop: responsiveSize(8),
     borderWidth: 1,
     borderColor: "#FF5252",
   },
@@ -840,18 +845,18 @@ const styles = StyleSheet.create({
     fontSize: responsiveFont(14),
   },
   addCategoryModal: {
-  minHeight: responsiveSize(220),
-  paddingBottom: Platform.OS === "ios" ? 30 : 20,
+    minHeight: responsiveSize(220),
+    paddingBottom: Platform.OS === "ios" ? responsiveSize(30) : responsiveSize(20),
 
-  marginBottom: responsiveSize(100),
-  marginHorizontal: responsiveSize(20),
+    marginBottom: responsiveSize(100),
+    marginHorizontal: responsiveSize(20),
 
-  borderRadius: responsiveSize(30),
-  overflow: "hidden",
+    borderRadius: responsiveRadius(30),
+    overflow: "hidden",
 
-  alignSelf: "center",
-  width: "90%",
-},
+    alignSelf: "center",
+    width: "90%",
+  },
 });
 
 export default BudgetScreen;

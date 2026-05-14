@@ -17,7 +17,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, SHADOWS, SPACING } from '../../utils/theme';
 import { DEMO_USER_ID } from '../../utils/constants';
 import { cleanupOldNotifications, deleteReminder, getReminders, getTrips, markNotificationAsRead } from '../../database/localDb';
-import { responsiveFont, responsiveSize } from '../../utils/responsive';
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius, wp } from '../../utils/responsive';
 import { generateSmartNotifications } from '../../services/smartNotificationService';
 
 const getNotificationMessage = (notification) =>
@@ -138,7 +138,7 @@ const NotificationsScreen = ({ navigation }) => {
         onPress={() => handleNotificationPress(item, tripName)}
       >
         <View style={styles.iconBox}>
-          <Ionicons name="notifications" size={width * 0.06} color={COLORS.primary} />
+          <Ionicons name="notifications" size={responsiveIcon(22)} color={COLORS.primary} />
         </View>
         <View style={styles.textContainer}>
           <View style={styles.titleRow}>
@@ -176,7 +176,7 @@ const NotificationsScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
+          <Ionicons name="chevron-back" size={responsiveIcon(24)} color={COLORS.primary} />
         </TouchableOpacity>
         <Text style={styles.title}>Notifications</Text>
         <View style={{ width: responsiveSize(44) }} />
@@ -198,7 +198,7 @@ const NotificationsScreen = ({ navigation }) => {
       ) : (
         <View style={styles.emptyContainer}>
           <View style={styles.iconCircle}>
-            <Ionicons name="notifications-off-outline" size={width * 0.15} color={COLORS.primary} />
+            <Ionicons name="notifications-off-outline" size={responsiveIcon(56)} color={COLORS.primary} />
           </View>
           <Text style={styles.emptyTitle}>No Notifications</Text>
           <Text style={styles.emptySubtitle}>
@@ -217,10 +217,10 @@ const NotificationsScreen = ({ navigation }) => {
           <Pressable style={styles.modalBox} onPress={() => {}}>
             <View style={styles.modalHeader}>
               <View style={styles.modalIconBox}>
-                <Ionicons name="notifications" size={22} color={COLORS.primary} />
+                <Ionicons name="notifications" size={responsiveIcon(22)} color={COLORS.primary} />
               </View>
               <TouchableOpacity onPress={closeNotificationModal} style={styles.modalCloseBtn}>
-                <Ionicons name="close" size={20} color={COLORS.gray} />
+                <Ionicons name="close" size={responsiveIcon(20)} color={COLORS.gray} />
               </TouchableOpacity>
             </View>
 
@@ -229,7 +229,7 @@ const NotificationsScreen = ({ navigation }) => {
             </Text>
 
             {!!selectedNotification?.title && (
-              <Text style={styles.modalReminderTitle}>{selectedNotification.title}</Text>
+              <Text style={styles.modalReminderTitle} numberOfLines={2}>{selectedNotification.title}</Text>
             )}
 
             <ScrollView
@@ -242,7 +242,7 @@ const NotificationsScreen = ({ navigation }) => {
 
             {!!selectedDate && (
               <View style={styles.modalDateRow}>
-                <Ionicons name="time-outline" size={14} color={COLORS.gray} />
+                <Ionicons name="time-outline" size={responsiveIcon(14)} color={COLORS.gray} />
                 <Text style={styles.modalDate}>{selectedDate}</Text>
               </View>
             )}
@@ -252,7 +252,7 @@ const NotificationsScreen = ({ navigation }) => {
               onPress={() => handleDeleteNotification(selectedNotification)}
               activeOpacity={0.85}
             >
-              <Ionicons name="trash-outline" size={18} color={COLORS.white} />
+              <Ionicons name="trash-outline" size={responsiveIcon(18)} color={COLORS.white} />
               <Text style={styles.modalDeleteText}>Delete Notification</Text>
             </TouchableOpacity>
           </Pressable>
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   backBtn: {
     width: responsiveSize(44),
     height: responsiveSize(44),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     backgroundColor: COLORS.white,
     alignItems: 'center',
     justifyContent: 'center',
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: responsiveSize(24),
+    borderRadius: responsiveRadius(24),
     marginBottom: responsiveSize(16),
     width: '100%',
     borderWidth: 1,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   iconBox: {
     width: responsiveSize(48),
     height: responsiveSize(48),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     backgroundColor: 'rgba(25, 100, 126, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: responsiveSize(8),
   },
   itemTitle: {
     fontFamily: 'Poppins-SemiBold',
@@ -357,8 +357,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: responsiveFont(12),
     color: COLORS.gray,
-    marginTop: 2,
-    lineHeight: 18,
+    marginTop: responsiveSize(2),
+    lineHeight: responsiveFont(18),
   },
   modalOverlay: {
     flex: 1,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxHeight: '72%',
     backgroundColor: COLORS.white,
-    borderRadius: responsiveSize(22),
+    borderRadius: responsiveRadius(22),
     padding: SPACING.l,
     ...SHADOWS.medium,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   modalIconBox: {
     width: responsiveSize(42),
     height: responsiveSize(42),
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     backgroundColor: 'rgba(25, 100, 126, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     fontSize: responsiveFont(13),
     color: COLORS.gray,
-    lineHeight: 22,
+    lineHeight: responsiveFont(22),
   },
   modalDateRow: {
     flexDirection: 'row',
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#E5484D',
-    borderRadius: responsiveSize(14),
+    borderRadius: responsiveRadius(14),
     paddingVertical: responsiveSize(12),
     marginTop: responsiveSize(18),
     gap: responsiveSize(8),
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     fontSize: responsiveFont(13),
     color: COLORS.gray,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: responsiveFont(22),
   },
   centerContainer: {
     flex: 1,

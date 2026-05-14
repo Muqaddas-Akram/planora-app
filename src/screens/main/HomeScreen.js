@@ -15,7 +15,7 @@ import { COLORS, FONTS, SHADOWS, SPACING } from '../../utils/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { DEMO_USER_ID } from '../../utils/constants';
 import { getChecklistItems, getExpenses, getTrips, getUnreadNotificationsCount } from '../../database/localDb';
-import { responsiveFont, responsiveSize } from '../../utils/responsive';
+import { responsiveFont, responsiveSize, responsiveIcon, responsiveRadius, wp } from '../../utils/responsive';
 import { classifyTripsByDate } from '../../utils/tripDates';
 import { generateSmartNotifications } from '../../services/smartNotificationService';
 
@@ -176,7 +176,7 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.greeting}>Hello, Traveler!</Text>
             <Text style={styles.subtitle}>Explore the world with Planora</Text>
           </View>
@@ -184,7 +184,7 @@ const HomeScreen = ({ navigation }) => {
             style={styles.notificationBtn}
             onPress={() => navigation.navigate('Notifications')}
           >
-            <Ionicons name="notifications-outline" size={28} color={COLORS.primary} />
+            <Ionicons name="notifications-outline" size={responsiveIcon(28)} color={COLORS.primary} />
             {unreadCount > 0 && <View style={styles.unreadDot} />}
           </TouchableOpacity>
         </View>
@@ -221,7 +221,7 @@ const HomeScreen = ({ navigation }) => {
                 </>
               ) : (
                 <View style={styles.emptyChartState}>
-                  <Ionicons name="bar-chart-outline" size={40} color={COLORS.gray} />
+                  <Ionicons name="bar-chart-outline" size={responsiveIcon(40)} color={COLORS.gray} />
                   <Text style={styles.emptyChartText}>No trips to analyze yet</Text>
                 </View>
               )}
@@ -246,8 +246,8 @@ const HomeScreen = ({ navigation }) => {
                   const tripPackingProgress = packingProgressMap[trip.id] || 0;
                   return (
                     <View key={trip.id} style={styles.activeTripCard}>
-                      <Text style={styles.activeTripName}>{trip.tripName}</Text>
-                      <Text style={styles.activeTripDest}>{trip.destination}</Text>
+                      <Text style={styles.activeTripName} numberOfLines={1}>{trip.tripName}</Text>
+                      <Text style={styles.activeTripDest} numberOfLines={1}>{trip.destination}</Text>
                       
                       <TouchableOpacity 
                         style={styles.tripStatCard}
@@ -257,7 +257,7 @@ const HomeScreen = ({ navigation }) => {
                           <Text style={styles.statCardTitle}>Balance</Text>
                           <Ionicons 
                             name={stats.remaining < 0 ? "warning" : "wallet-outline"} 
-                            size={14} 
+                            size={responsiveIcon(14)} 
                             color={stats.remaining < 0 ? '#FF5252' : COLORS.primary} 
                           />
                         </View>
@@ -286,7 +286,7 @@ const HomeScreen = ({ navigation }) => {
                           <Text style={styles.statCardTitle}>Packing</Text>
                           <Ionicons 
                             name="checkmark-circle-outline" 
-                            size={14} 
+                            size={responsiveIcon(14)} 
                             color={COLORS.primary} 
                           />
                         </View>
@@ -312,7 +312,7 @@ const HomeScreen = ({ navigation }) => {
               </ScrollView>
             ) : (
               <View style={styles.emptyMessageCard}>
-                <Ionicons name="calendar-outline" size={32} color={COLORS.gray} />
+                <Ionicons name="calendar-outline" size={responsiveIcon(32)} color={COLORS.gray} />
                 <Text style={styles.emptyMessageText}>No active trips</Text>
               </View>
             )}
@@ -330,40 +330,40 @@ const HomeScreen = ({ navigation }) => {
                 showsHorizontalScrollIndicator={false}
                 scrollEventThrottle={16}
                 contentContainerStyle={styles.upcomingTripsContainer}
-                snapToInterval={width * 0.75 + 16}
+                snapToInterval={wp(75) + responsiveSize(16)}
                 decelerationRate="fast"
               >
                 {upcomingTrips.slice(0, 5).map((trip) => (
                   <TouchableOpacity 
                     key={trip.id} 
-                    style={[styles.upcomingTripCard, { width: width * 0.75 }]}
+                    style={[styles.upcomingTripCard, { width: wp(75) }]}
                     onPress={() => navigation.navigate('Trips')}
                   >
                     <View style={styles.upcomingIconBox}>
-                      <Ionicons name="airplane" size={responsiveSize(22)} color={COLORS.white} />
+                      <Ionicons name="airplane" size={responsiveIcon(22)} color={COLORS.white} />
                     </View>
                     <View style={styles.upcomingInfo}>
                       <Text style={styles.upcomingDest} numberOfLines={1}>{trip.destination}</Text>
-                      <Text style={styles.upcomingDate}>
+                      <Text style={styles.upcomingDate} numberOfLines={1}>
                         Starts {new Date(trip.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </Text>
                     </View>
                     <View style={styles.upcomingGoBtn}>
-                      <Ionicons name="arrow-forward" size={18} color={COLORS.white} />
+                      <Ionicons name="arrow-forward" size={responsiveIcon(18)} color={COLORS.white} />
                     </View>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             ) : (
               <View style={styles.emptyMessageCard}>
-                <Ionicons name="calendar-outline" size={32} color={COLORS.gray} />
+                <Ionicons name="calendar-outline" size={responsiveIcon(32)} color={COLORS.gray} />
                 <Text style={styles.emptyMessageText}>No upcoming trips</Text>
               </View>
             )}
           </>
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons name="airplane-outline" size={80} color={COLORS.secondary} />
+            <Ionicons name="airplane-outline" size={responsiveIcon(80)} color={COLORS.secondary} />
             <Text style={styles.emptyTitle}>No Trips Yet</Text>
             <Text style={styles.emptyText}>Start planning your next adventure today!</Text>
             <TouchableOpacity 
@@ -413,14 +413,14 @@ const styles = StyleSheet.create({
   notificationBtn: {
     padding: responsiveSize(8),
     backgroundColor: COLORS.white,
-    borderRadius: responsiveSize(12),
+    borderRadius: responsiveRadius(12),
     ...SHADOWS.soft,
     position: 'relative',
   },
   unreadDot: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: responsiveSize(8),
+    right: responsiveSize(8),
     width: responsiveSize(10),
     height: responsiveSize(10),
     borderRadius: responsiveSize(5),
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   chartCard: {
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: responsiveSize(24),
+    borderRadius: responsiveRadius(24),
     marginBottom: SPACING.xl,
     ...SHADOWS.soft,
   },
@@ -439,8 +439,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 16,
+    paddingHorizontal: responsiveSize(8),
+    marginBottom: responsiveSize(16),
   },
   chartTitle: {
     fontFamily: 'Poppins-SemiBold',
@@ -449,9 +449,9 @@ const styles = StyleSheet.create({
   },
   chartBadge: {
     backgroundColor: 'rgba(25, 100, 126, 0.1)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingHorizontal: responsiveSize(10),
+    paddingVertical: responsiveSize(4),
+    borderRadius: responsiveRadius(20),
   },
   chartBadgeText: {
     fontFamily: 'Poppins-Medium',
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   customChartContainer: {
-    paddingHorizontal: 8,
+    paddingHorizontal: responsiveSize(8),
   },
   budgetBarContainer: {
     marginBottom: responsiveSize(20),
@@ -482,13 +482,13 @@ const styles = StyleSheet.create({
   barBackground: {
     height: responsiveSize(12),
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(6),
+    borderRadius: responsiveRadius(6),
     overflow: 'hidden',
     position: 'relative',
   },
   barFill: {
     height: '100%',
-    borderRadius: responsiveSize(6),
+    borderRadius: responsiveRadius(6),
   },
   overBudgetIndicator: {
     position: 'absolute',
@@ -508,13 +508,13 @@ const styles = StyleSheet.create({
   legendContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 20,
-    marginTop: 8,
+    gap: responsiveSize(20),
+    marginTop: responsiveSize(8),
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: responsiveSize(6),
   },
   legendDot: {
     width: responsiveSize(10),
@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
   activeTripCard: {
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: responsiveSize(20),
+    borderRadius: responsiveRadius(20),
     minWidth: responsiveSize(280),
     ...SHADOWS.soft,
   },
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     fontSize: responsiveFont(16),
     color: COLORS.black,
-    marginBottom: 4,
+    marginBottom: responsiveSize(4),
   },
   activeTripDest: {
     fontFamily: 'Poppins-Regular',
@@ -561,13 +561,13 @@ const styles = StyleSheet.create({
   tripStatCard: {
     backgroundColor: 'rgba(25, 100, 126, 0.05)',
     padding: SPACING.m,
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
   },
   statCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: responsiveSize(4),
   },
   statCardTitle: {
     fontFamily: 'Poppins-Medium',
@@ -578,18 +578,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Bold',
     fontSize: responsiveFont(16),
     color: COLORS.black,
-    marginBottom: 8,
+    marginBottom: responsiveSize(8),
   },
   smallProgressBar: {
     height: responsiveSize(6),
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(3),
+    borderRadius: responsiveRadius(3),
     overflow: 'hidden',
     marginBottom: responsiveSize(6),
   },
   smallProgressFill: {
     height: '100%',
-    borderRadius: responsiveSize(3),
+    borderRadius: responsiveRadius(3),
   },
   smallProgressLabel: {
     fontFamily: 'Poppins-Regular',
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     padding: SPACING.m,
-    borderRadius: responsiveSize(20),
+    borderRadius: responsiveRadius(20),
     backgroundColor: COLORS.white,
     ...SHADOWS.soft,
   },
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: responsiveSize(4),
   },
   cardTitle: {
     fontFamily: 'Poppins-Medium',
@@ -623,18 +623,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Urbanist-Bold',
     fontSize: responsiveFont(18),
     color: COLORS.black,
-    marginBottom: 8,
+    marginBottom: responsiveSize(8),
   },
   progressBar: {
     height: responsiveSize(8),
     backgroundColor: COLORS.lightGray,
-    borderRadius: responsiveSize(4),
+    borderRadius: responsiveRadius(4),
     overflow: 'hidden',
     marginBottom: responsiveSize(6),
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: responsiveRadius(4),
   },
   progressLabel: {
     fontFamily: 'Poppins-Regular',
@@ -662,13 +662,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: 20,
+    borderRadius: responsiveRadius(20),
     ...SHADOWS.soft,
   },
   iconBox: {
     backgroundColor: COLORS.primary,
     padding: responsiveSize(12),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
   },
   activityTitle: {
     fontFamily: 'Poppins-SemiBold',
@@ -681,27 +681,27 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
   },
   upcomingTripsContainer: {
-    paddingLeft: 4,
+    paddingLeft: responsiveSize(4),
     paddingRight: SPACING.l,
-    paddingVertical: 8,
+    paddingVertical: responsiveSize(8),
   },
   upcomingTripCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.white,
     padding: SPACING.m,
-    borderRadius: 20,
-    marginRight: 16,
+    borderRadius: responsiveRadius(20),
+    marginRight: responsiveSize(16),
     ...SHADOWS.soft,
   },
   upcomingIconBox: {
     backgroundColor: COLORS.secondary,
     padding: responsiveSize(12),
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
   },
   upcomingInfo: {
     flex: 1,
-    marginLeft: 16,
+    marginLeft: responsiveSize(16),
   },
   upcomingDest: {
     fontFamily: 'Poppins-SemiBold',
@@ -716,8 +716,8 @@ const styles = StyleSheet.create({
   upcomingGoBtn: {
     backgroundColor: COLORS.primary,
     padding: responsiveSize(10),
-    borderRadius: responsiveSize(12),
-    marginLeft: 8,
+    borderRadius: responsiveRadius(12),
+    marginLeft: responsiveSize(8),
   },
   emptyUpcomingTrips: {
     flexDirection: 'row',
@@ -725,10 +725,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: COLORS.white,
     padding: SPACING.xl,
-    borderRadius: 20,
-    marginTop: 8,
+    borderRadius: responsiveRadius(20),
+    marginTop: responsiveSize(8),
     ...SHADOWS.soft,
-    gap: 12,
+    gap: responsiveSize(12),
   },
   noTripsText: {
     fontFamily: 'Poppins-Medium',
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: responsiveSize(40),
-    gap: 12,
+    gap: responsiveSize(12),
   },
   emptyChartText: {
     fontFamily: 'Poppins-Medium',
@@ -752,9 +752,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: COLORS.white,
     padding: SPACING.xl,
-    borderRadius: 20,
+    borderRadius: responsiveRadius(20),
     marginBottom: SPACING.l,
-    gap: 12,
+    gap: responsiveSize(12),
     ...SHADOWS.soft,
   },
   emptyMessageText: {
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: responsiveSize(60),
     backgroundColor: COLORS.white,
-    borderRadius: responsiveSize(30),
+    borderRadius: responsiveRadius(30),
     ...SHADOWS.soft,
   },
   emptyTitle: {
@@ -790,7 +790,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.xl,
     paddingVertical: SPACING.m,
-    borderRadius: responsiveSize(16),
+    borderRadius: responsiveRadius(16),
     ...SHADOWS.medium,
   },
   addBtnText: {
